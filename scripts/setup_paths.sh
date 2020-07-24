@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-echo 'Setting up variable for PYTHONPATH'
-export PYTHONPATH=$PYTHONPATH:$PWD
-echo 'Everything is ok..'
+echo 'Setting up PYTHONPATH'
+export PYTHONPATH=$PWD:$PYTHONPATH
+echo 'Done..'
 echo 'PYTHONPATH'=$PYTHONPATH
