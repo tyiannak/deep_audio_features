@@ -21,11 +21,11 @@ def train_and_validate(model,
                        optimizer,
                        epochs,
                        cnn=False,
-                       cross_validation_epochs=5,
+                       validation_epochs=5,
                        early_stopping=False):
     """
     Trains the given <model>.
-    Then validates every <cross_validation_epochs>.
+    Then validates every <validation_epochs>.
     Returns: <best_model> containing the model with best parameters.
     """
 
@@ -35,7 +35,7 @@ def train_and_validate(model,
     print(next(iter(train_loader)))
 
     EPOCHS = epochs
-    CROSS_VALIDATION_EPOCHS = cross_validation_epochs
+    VALIDATION_EPOCHS = validation_epochs
 
     # Store losses, models
     all_accuracy_training = []
@@ -57,7 +57,7 @@ def train_and_validate(model,
         all_accuracy_training.append(train_acc)
 
         # ====== VALIDATION HERE ======
-        if epoch % CROSS_VALIDATION_EPOCHS == 0:
+        if epoch % VALIDATION_EPOCHS == 0:
             valid_loss, valid_acc = validate(epoch, valid_loader,
                                              model, loss_function, cnn=cnn)
 
@@ -82,7 +82,7 @@ def train_and_validate(model,
             all_accuracy_validation.append(valid_acc)
 
         # Make sure enough epochs have passed
-        if epoch < 4 * CROSS_VALIDATION_EPOCHS:
+        if epoch < 4 * VALIDATION_EPOCHS:
             continue
 
         # Early stopping enabled?
