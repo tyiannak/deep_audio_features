@@ -5,12 +5,18 @@ from sklearn.model_selection import StratifiedShuffleSplit
 from utils.sound_processing import get_melspectrogram, load_wav
 
 
-def load(folders=None, test_val=[0.2, 0.2], validation=True):
+def load(folders=None, test_val=[0.2, 0.2], test=True, validation=True):
     """Loads a dataset from some folders.
 
     Arguments
     ----------
         folders {list} : A list of folders containing all samples.
+
+        test_val {list} : A list containing the percenages for test and validation split.
+
+        test {boolean} : If False only train samples and labels are returned.
+
+        validation {boolean} : If False only train and test samples and labels are returned.
 
     Returns
     --------
@@ -44,10 +50,14 @@ def load(folders=None, test_val=[0.2, 0.2], validation=True):
     folder2idx, idx2folder = folders_mapping(folders=folders)
     labels = list(map(lambda x: folder2idx[x], labels))
 
+    # Split
+    if test is False:
+        # Use this data only to train
+        return filenames, labels
+
     # Get percentages
     test_p, val_p = test_val
 
-    # Split
     X_train_, y_train_ = [], []
     X_test, y_test = [], []
     X_train, y_train = [], []
@@ -91,16 +101,15 @@ def max_sequence_length(reload=False, X=None, folders=None):
             raise AssertionError()
         # Get all sample labels
         X_train, _, X_test, _, X_val, _ = load(folders=folders)
+        X = X_train+X_test+X_val
     # DEFAULT
     else:
         if X is None:
             raise AssertionError()
-        # Files should be given by previous load
-        X_train, X_test, X_val = X
 
     # Calculate and print max sequence number
     l = [np.shape(get_melspectrogram(load_wav(f)))[0]
-         for f in (X_train+X_test+X_val)]
+         for f in X]
     max_seq = np.max(l)
     # print(f"Max sequence length in dataset: {max_seq}")
     return max_seq

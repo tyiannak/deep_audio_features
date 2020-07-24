@@ -7,6 +7,8 @@ import numpy as np
 import config
 from utils import load_dataset
 
+from dataloading import FeatureExtractorDataset
+
 # sys.path.insert(0, '/'.join(os.path.abspath(__file__).split(' /')[:-2]))
 
 
@@ -19,14 +21,17 @@ def train(folders=None):
     # Create classes
     classes = [os.path.basename(f) for f in folders]
 
-    [X_train, y_train,
-     X_test, y_test,
-     X_val, y_val] = load_dataset.load(
-        folders=folders)
-
+    # Use data only for training
+    X_train, y_train = load_dataset.load(
+        folders=folders, test=False, validation=False)
+    print([X_train, y_train])
     # Compute max sequence length
     max_seq_length = load_dataset.max_sequence_length(
-        reload=False, X=[X_train, X_test, X_val])
+        reload=False, X=X_train)
+
+    # Dataloader
+    train_set = FeatureExtractorDataset(
+        X=X_train, y=y_train, feature_extraction_method="MEL_SPECTROGRAM", oversampling=True, max_sequence_length=max_seq_length)
 
 
 if __name__ == '__main__':
