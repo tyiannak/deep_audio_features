@@ -1,10 +1,11 @@
-#!/usr/bin/env python3
 from models.cnn import CNN1
 import argparse
 import os
 import sys
+import numpy as np
 
 import config
+from utils import load_dataset
 
 # sys.path.insert(0, '/'.join(os.path.abspath(__file__).split(' /')[:-2]))
 
@@ -18,7 +19,14 @@ def train(folders=None):
     # Create classes
     classes = [os.path.basename(f) for f in folders]
 
-    model = CNN1(output_dim=len(classes))
+    [X_train, y_train,
+     X_test, y_test,
+     X_val, y_val] = load_dataset.load(
+        folders=folders)
+
+    # Compute max sequence length
+    max_seq_length = load_dataset.max_sequence_length(
+        reload=False, X=[X_train, X_test, X_val])
 
 
 if __name__ == '__main__':

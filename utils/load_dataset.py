@@ -1,5 +1,8 @@
+import numpy as np
 import glob2 as glob
 from sklearn.model_selection import StratifiedShuffleSplit
+
+from utils.sound_processing import get_melspectrogram, load_wav
 
 
 def load(folders=None, test_val=[0.2, 0.2], validation=True):
@@ -79,6 +82,28 @@ def load(folders=None, test_val=[0.2, 0.2], validation=True):
         y_val.append(y_train_[idx])
 
     return X_train, y_train, X_test, y_test, X_val, y_val
+
+
+def max_sequence_length(reload=False, X=None, folders=None):
+    """Return max sequence length for all files."""
+    if reload is True:
+        if folders is None:
+            raise AssertionError()
+        # Get all sample labels
+        X_train, _, X_test, _, X_val, _ = load(folders=folders)
+    # DEFAULT
+    else:
+        if X is None:
+            raise AssertionError()
+        # Files should be given by previous load
+        X_train, X_test, X_val = X
+
+    # Calculate and print max sequence number
+    l = [np.shape(get_melspectrogram(load_wav(f)))[0]
+         for f in (X_train+X_test+X_val)]
+    max_seq = np.max(l)
+    # print(f"Max sequence length in dataset: {max_seq}")
+    return max_seq
 
 
 def folders_mapping(folders):
