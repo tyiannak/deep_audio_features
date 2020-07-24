@@ -24,12 +24,12 @@ def train(folders=None):
     # Use data only for training
     X_train, y_train = load_dataset.load(
         folders=folders, test=False, validation=False)
-    print([X_train, y_train])
+
     # Compute max sequence length
     max_seq_length = load_dataset.max_sequence_length(
         reload=False, X=X_train)
 
-    # Dataloader
+    # Load sets
     train_set = FeatureExtractorDataset(
         X=X_train, y=y_train, feature_extraction_method="MEL_SPECTROGRAM", oversampling=True, max_sequence_length=max_seq_length)
 
