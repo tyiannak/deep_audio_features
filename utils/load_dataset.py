@@ -51,7 +51,7 @@ def load(folders=None, test_val=[0.2, 0.2], test=True, validation=True):
     labels = list(map(lambda x: folder2idx[x], labels))
 
     # Split
-    if test is False:
+    if test is False and validation is False:
         # Use this data only to train
         return filenames, labels
 
