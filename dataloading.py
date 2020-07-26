@@ -43,7 +43,7 @@ class FeatureExtractorDataset(Dataset):
             # (features,seq_len) -> (seq_len,features)
             # X = [np.swapaxes(x, 0, 1) for x in X_parsed]
             # Get a spectrogram example
-            sound_processing.preview_melspectrogram(X[1])
+            # sound_processing.preview_melspectrogram(X[1])
 
         elif feature_extraction_method == "MFCC":
             # Get file read using librosa

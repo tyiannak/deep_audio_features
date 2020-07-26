@@ -48,10 +48,10 @@ def train(folders=None):
                                        max_sequence_length=max_seq_length)
 
     # Add dataloader
-    train_loader = torch.dataloader = DataLoader(
+    train_loader = DataLoader(
         train_set, batch_size=config.BATCH_SIZE, num_workers=4, drop_last=True, shuffle=True)
 
-    valid_loader = torch.dataloader = DataLoader(
+    valid_loader = DataLoader(
         eval_set, batch_size=config.BATCH_SIZE, num_workers=4, drop_last=True, shuffle=True)
 
     # use GPU if available
@@ -61,6 +61,8 @@ def train(folders=None):
     model = CNN1(output_dim=len(classes))
     model.to(device)
     print(model)
+    # Add max_seq_length to model
+    model.max_sequence_length = max_seq_length
     print('Model parameters:{}'.format(sum(p.numel()
                                            for p in model.parameters() if p.requires_grad)))
 
