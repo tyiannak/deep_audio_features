@@ -7,7 +7,7 @@ from dataloading import FeatureExtractorDataset
 from training import test
 
 
-def test_model(modelpath, ifile, **kwargs):
+def test_model(modelpath, ifile, softmax, ** kwargs):
     """ Loads a model and predicts each classes probability
 
 Arguments:
@@ -26,6 +26,7 @@ Returns:
 
     # Restore model
     model = joblib.load(modelpath)
+    print('Model:\n{}'.format(model))
     max_seq_length = model.max_sequence_length
 
     # Move to device
@@ -47,8 +48,12 @@ Returns:
 
     # Predict some values
     y_pred = test(model=model, dataloader=test_loader,
-                  cnn=True, probabilities=True).cpu().detach().numpy()[0]
-    print(y_pred)
+                  cnn=True, softmax=softmax)
+
+    if softmax is True:
+        print(y_pred[0])
+    else:
+        print(y_pred.cpu().detach().numpy()[0])
 
 
 if __name__ == '__main__':
@@ -61,11 +66,15 @@ if __name__ == '__main__':
     parser.add_argument('-i', '--input', required=True,
                         type=str, help='Input file for testing')
 
+    parser.add_argument('-s', '--softmax', required=False, action='store_true',
+                        help='If true softmax is applied in the last hidden layer', default=False)
+
     args = parser.parse_args()
 
     # Get arguments
     model = args.model
     ifile = args.input
+    softmax = args.softmax
 
     # Test the model
-    test_model(modelpath=model, ifile=ifile)
+    test_model(modelpath=model, ifile=ifile, softmax=softmax)

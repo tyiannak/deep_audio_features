@@ -243,7 +243,7 @@ def validate(_epoch, dataloader, model, loss_function, cnn=False):
     return valid_loss / len(dataloader.dataset), accuracy
 
 
-def test(model, dataloader, cnn=False, probabilities=False):
+def test(model, dataloader, cnn=False, softmax=False):
     """
     Tests a given model.
     Returns an array with predictions and an array with labels.
@@ -271,7 +271,7 @@ def test(model, dataloader, cnn=False, probabilities=False):
             # Add a new axis for CNN filter features, [z-axis]
             inputs = inputs[:, np.newaxis, :, :]
             out = model.forward(inputs)
-        if probabilities is True:
+        if softmax is False:
             return out
         # Predict the one with the maximum probability
         # predictions = F.softmax(out, dim=-1).argmax(dim=-1)
