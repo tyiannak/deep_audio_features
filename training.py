@@ -271,13 +271,12 @@ def test(model, dataloader, cnn=False, softmax=False):
             # Add a new axis for CNN filter features, [z-axis]
             inputs = inputs[:, np.newaxis, :, :]
             out = model.forward(inputs)
+
         if softmax is False:
             return out
+
         # Predict the one with the maximum probability
-        # predictions = F.softmax(out, dim=-1).argmax(dim=-1)
-        # print(f'\nout:{out}')
         predictions = torch.argmax(out, -1)
-        # print(f'\nprediction: {predictions}')
         # Save predictions
         y_pred.append(predictions.cpu().data.numpy())
         y_true.append(labels.cpu().data.numpy())
