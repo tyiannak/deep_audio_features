@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import glob2 as glob
 from sklearn.model_selection import StratifiedShuffleSplit
@@ -42,7 +43,7 @@ def load(folders=None, test_val=[0.2, 0.2], test=True, validation=True):
 
     # Match filenames with labels
     for folder in folders:
-        for f in glob.iglob(''.join([folder, '*.wav'])):
+        for f in glob.iglob(os.path.join(folder, '*.wav')):
             filenames.append(f)
             labels.append(folder)
 
