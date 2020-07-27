@@ -1,6 +1,4 @@
 import argparse
-import joblib
-
 import torch
 from torch.utils.data import DataLoader
 from dataloading import FeatureExtractorDataset
@@ -25,7 +23,7 @@ Returns:
     """
 
     # Restore model
-    model = joblib.load(modelpath)
+    model = torch.load(modelpath)
     print('Model:\n{}'.format(model))
     max_seq_length = model.max_sequence_length
 

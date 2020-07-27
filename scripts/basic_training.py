@@ -2,7 +2,6 @@ import argparse
 import os
 import sys
 import time
-import joblib
 
 import torch
 from torch.utils.data import DataLoader
@@ -83,12 +82,12 @@ def train(folders=None):
                                                                                                          early_stopping=True)
 
     timestamp = time.ctime()
-    model_id = f"{best_model.__class__.__name__}_{_epochs}_{timestamp}.pkl"
+    model_id = f"{best_model.__class__.__name__}_{_epochs}_{timestamp}.pt"
     modelname = os.path.join(
         VARIABLES_FOLDER, model_id)
     print(f"\nSaving model to: {model_id}\n")
     # Save model for later use
-    joblib.dump(best_model, modelname)
+    torch.save(best_model, modelname)
 
 
 if __name__ == '__main__':
