@@ -40,12 +40,16 @@ class CNN1(nn.Module):
         self.linear_layer1 = nn.Sequential(
             nn.Dropout2d(0.75),
             nn.Linear(5376, 1024),
-            nn.LeakyReLU(),
+            nn.LeakyReLU()
+        )
 
+        self.linear_layer2 = nn.Sequential(
             nn.Dropout(0.5),
             nn.Linear(1024, 256),
-            nn.LeakyReLU(),
+            nn.LeakyReLU()
+        )
 
+        self.linear_layer3 = nn.Sequential(
             # nn.Dropout(0.2),
             nn.Linear(256, output_dim),
             nn.LeakyReLU()
@@ -61,7 +65,9 @@ class CNN1(nn.Module):
         out = self.layer3(out)
         out = out.view(len(out), -1)
 
-        # DNN
+        # DNN -- pass through linear layers
         out = self.linear_layer1(out)
+        out = self.linear_layer2(out)
+        out = self.linear_layer3(out)
 
         return out
