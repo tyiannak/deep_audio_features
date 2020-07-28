@@ -1,8 +1,8 @@
 import argparse
 import torch
 from torch.utils.data import DataLoader
-from dataloading import FeatureExtractorDataset
-from training import test
+from dataloading.dataloading import FeatureExtractorDataset
+from lib.training import test
 from utils.model_editing import drop_layers
 
 
@@ -58,8 +58,7 @@ Returns:
     # [0] only for 1 sample to remove [[value]]
     print(out[0])
     #  If model has all layers can correctly predict a class
-    if y_pred != None:
-        print(y_pred)
+    print(y_pred)
 
 
 if __name__ == '__main__':

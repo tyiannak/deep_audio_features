@@ -10,14 +10,14 @@ import numpy as np
 import config
 from config import EPOCHS, CNN_BOOLEAN, VARIABLES_FOLDER
 from models.cnn import CNN1
-from training import train_and_validate
+from lib.training import train_and_validate
 from utils import load_dataset
-from dataloading import FeatureExtractorDataset
+from dataloading.dataloading import FeatureExtractorDataset
 
 # sys.path.insert(0, '/'.join(os.path.abspath(__file__).split(' /')[:-2]))
 
 
-def train(folders=None):
+def train_model(folders=None):
     """Train a given model on a given dataset"""
     # Check that folders exist
     if folders is None:
@@ -110,4 +110,4 @@ if __name__ == '__main__':
         if os.path.exists(f) is False:
             raise FileNotFoundError()
 
-    train(folders)
+    train_model(folders)
