@@ -243,7 +243,7 @@ def validate(_epoch, dataloader, model, loss_function, cnn=False):
     return valid_loss / len(dataloader.dataset), accuracy
 
 
-def test(model, dataloader, cnn=False, softmax=False):
+def test(model, dataloader, cnn=False, argmax=False):
     """
     Tests a given model.
     Returns an array with predictions and an array with labels.
@@ -272,7 +272,7 @@ def test(model, dataloader, cnn=False, softmax=False):
             inputs = inputs[:, np.newaxis, :, :]
             out = model.forward(inputs)
 
-        if softmax is False:
+        if argmax is False:
             return out
 
         # Predict the one with the maximum probability
@@ -285,7 +285,7 @@ def test(model, dataloader, cnn=False, softmax=False):
     y_pred = np.array(y_pred).flatten()
     y_true = np.array(y_true).flatten()
 
-    return y_pred, y_true
+    return y_pred  # , y_true
 
 
 def progress(loss, epoch, batch, batch_size, dataset_size):
