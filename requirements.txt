@@ -1,0 +1,2 @@
+argparse==1.4.0
+torch==1.5.1
