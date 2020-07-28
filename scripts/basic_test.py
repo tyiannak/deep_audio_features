@@ -51,15 +51,15 @@ Returns:
                              shuffle=False)
 
     # Forward a sample
-    y_pred = test(model=model, dataloader=test_loader,
-                  cnn=True,
-                  argmax=True if layers_dropped == 0 else False)
+    out, y_pred = test(model=model, dataloader=test_loader,
+                       cnn=True,
+                       classifier=True if layers_dropped == 0 else False)
 
-    if layers_dropped == 0:
+    # [0] only for 1 sample to remove [[value]]
+    print(out[0])
+    #  If model has all layers can correctly predict a class
+    if y_pred != None:
         print(y_pred)
-    else:
-        # [0] only for 1 sample to remove [[value]]
-        print(y_pred.cpu().detach().numpy()[0])
 
 
 if __name__ == '__main__':

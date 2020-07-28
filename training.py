@@ -243,10 +243,30 @@ def validate(_epoch, dataloader, model, loss_function, cnn=False):
     return valid_loss / len(dataloader.dataset), accuracy
 
 
-def test(model, dataloader, cnn=False, argmax=False):
-    """
-    Tests a given model.
-    Returns an array with predictions and an array with labels.
+def test(model, dataloader, cnn=False, classifier=True):
+    """Tests a given model.
+
+### Arguments:
+
+        model {torch.nn.Module} : Model that will be tested.
+
+        dataloader {torch.utils.data.DataLoader} : Test set dataloader.
+
+        cnn {bool} : If True test function expects a cnn model.
+                        This adds an extra axis for convolutional
+                        layers features.
+
+        classifier {bool} : If `True` the function returns the model's
+                            class prediction. This makes the model work
+                            as a classifier.
+
+### Returns:
+
+        out {np.array} : A np.array containing features/output values
+                            of the final layer of a model.
+
+        y_pred {np.array} : If `classifier` is `True` returns the class
+                             prediction else `False`.
     """
     # obtain the model's device ID
     device = next(model.parameters()).device
@@ -272,20 +292,21 @@ def test(model, dataloader, cnn=False, argmax=False):
             inputs = inputs[:, np.newaxis, :, :]
             out = model.forward(inputs)
 
-        if argmax is False:
-            return out
+        if classifier is False:
+            return out.cpu().detach().numpy(), None
 
         # Predict the one with the maximum probability
         predictions = torch.argmax(out, -1)
         # Save predictions
         y_pred.append(predictions.cpu().data.numpy())
-        y_true.append(labels.cpu().data.numpy())
 
     # Get metrics
     y_pred = np.array(y_pred).flatten()
-    y_true = np.array(y_true).flatten()
 
-    return y_pred  # , y_true
+    # Detach out
+    out = out.cpu().detach().numpy()
+
+    return out, y_pred
 
 
 def progress(loss, epoch, batch, batch_size, dataset_size):
