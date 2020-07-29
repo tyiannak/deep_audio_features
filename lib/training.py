@@ -1,13 +1,8 @@
 import torch
-from torch.nn import functional as F
-import os
 import sys
 import math
 from copy import deepcopy
-import matplotlib.pyplot as plt
-import seaborn as sns
 import numpy as np
-# Report metrics
 from sklearn.metrics import classification_report
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import f1_score, accuracy_score
@@ -92,14 +87,16 @@ def train_and_validate(model,
         STOP = True
 
         # If validation loss is ascending two times in a row exit training
-        if (all_valid_loss[-1] >= all_valid_loss[-2]) and (all_valid_loss[-2] >= all_valid_loss[-3]):
+        if (all_valid_loss[-1] >= all_valid_loss[-2]) and \
+                (all_valid_loss[-2] >= all_valid_loss[-3]):
             print(f'\nIncreasing loss..')
             print(f'\nResetting model to epoch {best_model_epoch}.')
             # Remove unnessesary model
             model.to('cpu')
             best_model = best_model.to(device)
             # Exit 2 loops at the same time, go to testing
-            return best_model, all_train_loss, all_valid_loss, all_accuracy_training, all_accuracy_validation, epoch
+            return best_model, all_train_loss, all_valid_loss, \
+                   all_accuracy_training, all_accuracy_validation, epoch
 
         # Small change in loss
         if (abs(all_valid_loss[-1] - all_valid_loss[-2]) < 1e-3 and
@@ -110,13 +107,15 @@ def train_and_validate(model,
             model.to('cpu')
             best_model = best_model.to(device)
             # Exit 2 loops at the same time, go to testing
-            return best_model, all_train_loss, all_valid_loss, all_accuracy_training, all_accuracy_validation, epoch
+            return best_model, all_train_loss, all_valid_loss, \
+                   all_accuracy_training, all_accuracy_validation, epoch
 
     print(f'\nTraining exited normally at epoch {epoch}.')
     # Remove unnessesary model
     model.to('cpu')
     best_model = best_model.to(device)
-    return best_model, all_train_loss, all_valid_loss, all_accuracy_training, all_accuracy_validation, epoch
+    return best_model, all_train_loss, all_valid_loss, \
+           all_accuracy_training, all_accuracy_validation, epoch
 
 
 def train(_epoch, dataloader, model, loss_function, optimizer, cnn=False):
@@ -183,6 +182,7 @@ def train(_epoch, dataloader, model, loss_function, optimizer, cnn=False):
              dataset_size=len(dataloader.dataset))
 
     accuracy = correct/len(dataloader.dataset) * 100
+
     # Print some stats
     # print(
     #     f'\nTrain loss at epoch {_epoch} : {round(training_loss/len(dataloader), 4)}')
@@ -236,7 +236,8 @@ def validate(_epoch, dataloader, model, loss_function, cnn=False):
 
         # Print some stats
         print(
-            f'\nValidation loss at epoch {_epoch} : {round(valid_loss/len(dataloader.dataset), 4)}')
+            f'\nValidation loss at epoch {_epoch} : '
+            f'{round(valid_loss/len(dataloader.dataset), 4)}')
 
         accuracy = correct / len(dataloader.dataset) * 100
 

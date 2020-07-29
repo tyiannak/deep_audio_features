@@ -1,7 +1,7 @@
 import librosa
 import os
 import numpy as np
-from core.config import WINDOW_LENGTH, HOP_LENGTH, SAMPLING_RATE
+from bin.config import WINDOW_LENGTH, HOP_LENGTH, SAMPLING_RATE
 
 
 def load_wav(filename):
