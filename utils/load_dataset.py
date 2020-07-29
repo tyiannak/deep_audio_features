@@ -2,7 +2,6 @@ import os
 import numpy as np
 import glob2 as glob
 from sklearn.model_selection import StratifiedShuffleSplit
-
 from utils.sound_processing import get_melspectrogram, load_wav
 
 
@@ -11,31 +10,24 @@ def load(folders=None, test_val=[0.2, 0.2], test=True, validation=True):
 
     Arguments
     ----------
-        folders {list} : A list of folders containing all samples.
-
-        test_val {list} : A list containing the percenages for test and validation split.
-
+        folders {list}:  A list of folders containing all samples.
+        test_val {list}: A list containing the percenages for test and
+        validation split.
         test {boolean} : If False only train samples and labels are returned.
-
-        validation {boolean} : If False only train and test samples and labels are returned.
+        validation {boolean} : If False only train and test samples and
+        labels are returned.
 
     Returns
     --------
         X_train {list} : All filenames for train.
-
         y_train {list} : Labels for train.
-
         X_test {list} : Filenames for test.
-
         y_test {list} : Labels for train.
-
         if `validation` is `True` also returns the following:
-
         X_valid {list} : Filenames for validation.
-
         y_valid {list} : Labels for validation.
-
     """
+
     if folders is None:
         raise AssertionError()
     filenames = []
@@ -117,7 +109,8 @@ def max_sequence_length(reload=False, X=None, folders=None):
 
 
 def folders_mapping(folders):
-    """Return a mapping from folder to class and a mapping from class to folder."""
+    """Return a mapping from folder to class and a mapping from
+    class to folder."""
     folder2idx = {}
     idx2folder = {}
     for idx, folder in enumerate(folders):
