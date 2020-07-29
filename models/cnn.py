@@ -1,16 +1,4 @@
-import copy
-import re
-import os
-import numpy as np
-from sklearn.preprocessing import LabelEncoder
-from sklearn.metrics import accuracy_score, f1_score, recall_score
-
-import torch
 import torch.nn as nn
-import torch.nn.functional as F
-import torch.optim as optim
-from torch.utils.data import Dataset
-from torch.utils.data import SubsetRandomSampler, DataLoader
 
 
 class CNN1(nn.Module):
@@ -18,7 +6,7 @@ class CNN1(nn.Module):
         super(CNN1, self).__init__()
 
         self.layer1 = nn.Sequential(
-            nn.Conv2d(1, 32, kernel_size=5, stride=1, padding=2),
+            nn.Conv2d(1, 32, kernel_size=3, stride=1, padding=2),
             nn.BatchNorm2d(32),
             nn.LeakyReLU(),
             nn.MaxPool2d(kernel_size=2, stride=2))
@@ -39,7 +27,7 @@ class CNN1(nn.Module):
 
         self.linear_layer1 = nn.Sequential(
             nn.Dropout2d(0.75),
-            nn.Linear(5376, 1024),
+            nn.Linear(1792, 1024),
             nn.LeakyReLU()
         )
 
