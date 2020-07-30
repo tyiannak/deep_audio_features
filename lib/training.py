@@ -202,6 +202,9 @@ def validate(_epoch, dataloader, model, loss_function, cnn=False):
     device = next(model.parameters()).device
 
     with torch.no_grad():
+        predictions = np.array([])
+        ground_truths = np.array([])
+
         valid_loss = 0
 
         for index, batch in enumerate(dataloader, 1):
@@ -222,24 +225,22 @@ def validate(_epoch, dataloader, model, loss_function, cnn=False):
                 inputs = inputs[:, np.newaxis, :, :]
                 y_pred = model.forward(inputs)
 
-            labels_cpu = labels.detach().clone().to('cpu').numpy()
-            # Get accuracy
-            correct += sum([int(a == b)
-                            for a, b in zip(labels_cpu,
-                                            np.argmax(y_pred.detach().clone().to('cpu').numpy(), axis=1))])
+            ground_truths = np.append(ground_truths,
+                                      labels.detach().clone().to('cpu').numpy())
 
-            # Compute loss
-            loss = loss_function(y_pred, labels)
+            y_pred_n = y_pred.detach().clone().to('cpu').numpy()
 
-            # Add validation loss
-            valid_loss += loss.data.item()
+            predictions = np.append(predictions, np.argmax(y_pred_n, axis=1))
+
+            valid_loss += loss_function(y_pred, labels).data.item()
+
+        accuracy = accuracy_score(predictions, ground_truths)
+        print(accuracy)
 
         # Print some stats
         print(
             f'\nValidation loss at epoch {_epoch} : '
             f'{round(valid_loss/len(dataloader.dataset), 4)}')
-
-        accuracy = correct / len(dataloader.dataset) * 100
 
     return valid_loss / len(dataloader.dataset), accuracy
 
