@@ -235,7 +235,7 @@ def validate(_epoch, dataloader, model, loss_function, cnn=False):
             valid_loss += loss_function(y_pred, labels).data.item()
 
         accuracy = accuracy_score(predictions, ground_truths)
-        print(accuracy)
+        print(f'\nAccuracy {accuracy}')
 
         # Print some stats
         print(

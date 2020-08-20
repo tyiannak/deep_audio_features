@@ -80,7 +80,8 @@ def train_model(folders=None):
                                                                                                          cnn=CNN_BOOLEAN,
                                                                                                          validation_epochs=5,
                                                                                                          early_stopping=True)
-
+    print(train_accuracy)
+    print(valid_accuracy)
     timestamp = time.ctime()
     model_id = f"{best_model.__class__.__name__}_{_epochs}_{timestamp}.pt"
     modelname = os.path.join(
