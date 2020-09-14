@@ -17,7 +17,7 @@ from dataloading.dataloading import FeatureExtractorDataset
 # sys.path.insert(0, '/'.join(os.path.abspath(__file__).split(' /')[:-2]))
 
 
-def train_model(folders=None):
+def train_model(folders=None, ofile=None):
     """Train a given model on a given dataset"""
     # Check that folders exist
     if folders is None:
@@ -62,6 +62,7 @@ def train_model(folders=None):
     print(model)
     # Add max_seq_length to model
     model.max_sequence_length = max_seq_length
+
     print('Model parameters:{}'.format(sum(p.numel()
                                            for p in model.parameters() if p.requires_grad)))
 
@@ -82,10 +83,16 @@ def train_model(folders=None):
                                                                                                          early_stopping=True)
 
     timestamp = time.ctime()
-    model_id = f"{best_model.__class__.__name__}_{_epochs}_{timestamp}.pt"
+
+    if ofile is None:
+        ofile = f"{best_model.__class__.__name__}_{_epochs}_{timestamp}.pt"
+    else:
+        ofile = str(ofile)
+        if '.pt' not in ofile or '.pkl' not in ofile:
+            ofile = ''.join([ofile, '.pt'])
     modelname = os.path.join(
-        VARIABLES_FOLDER, model_id)
-    print(f"\nSaving model to: {model_id}\n")
+        VARIABLES_FOLDER, ofile)
+    print(f"\nSaving model to: {modelname}\n")
     # Save model for later use
     torch.save(best_model, modelname)
 
@@ -96,11 +103,14 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-i', '--input', required=True,
                         type=str, nargs='+', help='Input folders')
+    parser.add_argument('-o', '--ofile', required=False, default=None,
+                        type=str, help='Model name.')
 
     args = parser.parse_args()
 
     # Get argument
     folders = args.input
+    ofile = args.ofile
 
     # Fix any type errors
     folders = [f.replace(',', '').strip() for f in folders]
@@ -110,4 +120,4 @@ if __name__ == '__main__':
         if os.path.exists(f) is False:
             raise FileNotFoundError()
 
-    train_model(folders)
+    train_model(folders, ofile)
