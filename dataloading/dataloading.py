@@ -106,6 +106,10 @@ class FeatureExtractorDataset(Dataset):
                     diff = max_length - X[i].shape[0]
                     # pad
                     X[i] = np.vstack((X[i], np.zeros((diff, feature_dim))))
+                else:
+                    # Instead of raising an error just truncate the file
+                    X[i] = np.take(X[i], list(range(0, max_length)), axis=0)
+                # Add to padded
                 padded[i, :, :] = X[i]
             return padded
 
@@ -122,7 +126,12 @@ class FeatureExtractorDataset(Dataset):
                     diff = max_length - X[i].shape[0]
                     # pad
                     X[i] = np.vstack((X[i], np.zeros((diff, feature_dim))))
+                else:
+                    # Instead of raising an error just truncate the file
+                    X[i] = np.take(X[i], list(range(0, max_length)), axis=0)
+                # Add to padded
                 padded[i, :, :] = X[i]
             return padded
+
         else:
             raise AssertionError()
