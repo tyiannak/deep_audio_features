@@ -1,24 +1,44 @@
 ## Setup
 
-#### PATHS
-```python
+
+
+#### Install and path setup
+
+```bash
+git clone https://github.com/tyiannak/deep_audio_features
 cd deep_audio_features
 source scripts/setup_paths.py
 ```
---------
-#### MAIN
 
-#### - training:
+
+
+#### CORE UTILITIES
+
+##### training script
 
 ```python
-python3 scripts/basic_training.py -i /path/to/folder1 /path/to/folder2
+python3 core/basic_training.py -i /path/to/folder1 /path/to/folder2
 ```
+`-i` : select the folders where the data will be loaded from.
+`-o` : select the exported file name.
 
-#### - testing:
+##### testing script
+
+```python
+python3 core/basic_test.py -m /path/to/model/ -i /path/to/file (-s)
+```
+`-i` : select the folders  where the testing data will be loaded from.
+`-m` : select a model to apply testing.
+`-s`  : argmax function is applied to the softmax outputs.
+
+
+
+##### transfer learning script
 
 ```
-python3 scripts/basic_test.py -m /path/to/model/ -i /path/to/file (-s)
+python3 core/transfer_learning.py -m /path/to/model -i /path/to/folder1 /path/to/folder2 -s
 ```
-
-​		if option `-s` is applied to testing, the function applies the argmax function to the softmax outputs.
+`-m` : select a model to apply fine-tuning.
+`-i` : select the folders where the data will be loaded from.
+`-s` : select which strategy to use. `0` applies fine-tuning to all layers while `1` freezes `Conv2d` layers and fine-tunes `Linear` only.
 
