@@ -6,14 +6,17 @@ def print_require_grad_parameter(model):
     """Iterate through `Conv2d` and `Linear` layers of a model.
 Print whether a layer updates its weights or not.
 
-### Arguments:
+# Arguments:
 
         model {torch.nn.Module} : The model to iterate.
 """
+    print("\n--------------------------------")
+    print("Layer -> Requires_grad ?")
     for ch1 in model.children():
         for layer in ch1.children():
             if isinstance(layer, torch.nn.Conv2d) or isinstance(layer, torch.nn.Linear):
                 print(f"{layer} -> {layer.weight.requires_grad}")
+    print("--------------------------------")
     print('\n\n')
 
 
@@ -76,7 +79,7 @@ Returns:
 def fine_tune_model(model=None, output_dim=None, strategy=0, deepcopy=False, *args, **kwargs):
     """Fine tune a given model.
 
-### Arguments:
+# Arguments:
 
         model {torch.nn.Module} : The model to edit.
 
@@ -92,7 +95,7 @@ def fine_tune_model(model=None, output_dim=None, strategy=0, deepcopy=False, *ar
 
         deepcopy {bool} : If `True` a copy of `model` is returned.
                             Otherwise `model` is updated by reference
-                            and returned. 
+                            and returned.
     """
     # Attribute checks
     if model is None:
@@ -108,44 +111,29 @@ def fine_tune_model(model=None, output_dim=None, strategy=0, deepcopy=False, *ar
 
         # Get all layers
         model_layers = [y for x in model.children() for y in x.children()]
-
-        # idx1 : children level 1 that contain linear
-        # idx2 : children level 2 that contain -- are linear
-        # linear : the class torch.nn.Linear()
-        # Get a list of tuples. Last layer is [-1]
-        idx1_idx2_linear = [(idx1, idx2, ch2) for idx1, ch1 in enumerate(model.children())
-                            for idx2, ch2 in enumerate(ch1.children()) if isinstance(ch2, torch.nn.Linear)]
-
         if model_layers == []:
             # Has not children level 2 => functional
             FUNCTIONAL = True
             raise NotImplementedError()
 
-        # Get indexes for linear layers
-        linear_idx = [idx for idx, x in enumerate(
-            model_layers) if isinstance(x, torch.nn.Linear)]
-
-        # Get last linear layer variables
-        last_linear = list(list(model.children())[
-                           idx1_idx2_linear[-1][0]])[idx1_idx2_linear[-1][1]]
-
-        # Get input dimension
-        input_dim = last_linear.in_features
-
-        # Set output dimension
-        last_linear.out_features = output_dim
-
-        # Get indexes for editing
-        idx1_idx2_layer = [(idx1, idx2, ch2) for idx1, ch1 in enumerate(model.children())
-                           for idx2, ch2 in enumerate(ch1.children())]
-        # Set model's children prop: require_grad = True for all layers
-        for idx1, idx2, layer in idx1_idx2_layer:
-            try:
-                model[idx1][idx2].weight.requires_grad = True
-                model[idx1][idx2].bias.requires_grad = True
-            except:
-                # Dropout etc.
-                pass
+        named_children = list(model.named_children())
+        for seq_layername, seq_layer in named_children[::-1]:
+            if any([isinstance(c, torch.nn.Linear) for c in seq_layer.children()]):
+                newlayer = []
+                for nested_layer in seq_layer.children():
+                    if not isinstance(nested_layer, torch.nn.Linear):
+                        # Anything except linear is just added as it is
+                        newlayer.append(nested_layer)
+                    else:
+                        # If the layer is linear we need to parametrise it, so
+                        # Get dimensions
+                        input_dim = nested_layer.in_features
+                        # Set new layer
+                        newlayer.append(torch.nn.Linear(input_dim, output_dim))
+                # Set the new Seq layer by replacing using attribute
+                # **cant set manually due to generator is trying to access list
+                setattr(model, seq_layername, torch.nn.Sequential(*newlayer))
+                break
 
         return model
 
@@ -153,43 +141,40 @@ def fine_tune_model(model=None, output_dim=None, strategy=0, deepcopy=False, *ar
     if strategy == 1:
         # Freeze all layers except for the linear
         model_layers = [y for x in model.children() for y in x.children()]
-        # indexes for editing
-        idx1_idx2_layer = [(idx1, idx2, ch2) for idx1, ch1 in enumerate(model.children())
-                           for idx2, ch2 in enumerate(ch1.children())]
-        for idx1, idx2, layer in idx1_idx2_layer:
-            if isinstance(layer, torch.nn.Conv2d):
-                # Freeze bias
-                try:
-                    layer.bias.requires_grad = False
-                except Exception as e:
-                    print(
-                        f"Failed to freeze all bias at model[{idx1}],[{idx2}]={layer}: {e}")
-                # Freeze weight
-                try:
-                    layer.weight.requires_grad = False
-                except Exception as e:
-                    print(
-                        f"Failed to freeze all weights at model[{idx1}],[{idx2}]={layer}: {e}")
+        if model_layers == []:
+            raise NotImplementedError()
 
-        # idx1 : children level 1 that contain linear
-        # idx2 : children level 2 that contain -- are linear
-        # linear : the class torch.nn.Linear()
-        # Get a list of tuples. Last layer is [-1]
-        idx1_idx2_linear = [(idx1, idx2, ch2) for idx1, ch1 in enumerate(model.children())
-                            for idx2, ch2 in enumerate(ch1.children()) if isinstance(ch2, torch.nn.Linear)]
+        named_children = list(model.named_children())
+        for seq_layername, seq_layer in named_children:
+            # Find all Conv2d layers and freeze weights
+            if any([isinstance(c, torch.nn.Conv2d) for c in seq_layer.children()]):
+                for nested_layer in seq_layer.children():
+                    # Skip all except Conv2d
+                    if not isinstance(nested_layer, torch.nn.Conv2d):
+                        continue
+                    # Set grad off for bias as well as weights
+                    try:
+                        nested_layer.bias.requires_grad = False
+                        nested_layer.weight.requires_grad = False
+                    except Exception as e:
+                        raise e("Error while trying to turn off gradients.")
 
-        # Get indexes for linear layers
-        linear_idx = [idx for idx, x in enumerate(
-            model_layers) if isinstance(x, torch.nn.Linear)]
-
-        # Get last linear layer variables
-        last_linear = list(list(model.children())[
-                           idx1_idx2_linear[-1][0]])[idx1_idx2_linear[-1][1]]
-
-        # Get input dimension
-        input_dim = last_linear.in_features
-
-        # Set output dimension
-        last_linear.out_features = output_dim
+        for seq_layername, seq_layer in named_children[::-1]:
+            if any([isinstance(c, torch.nn.Linear) for c in seq_layer.children()]):
+                newlayer = []
+                for nested_layer in seq_layer.children():
+                    if not isinstance(nested_layer, torch.nn.Linear):
+                        # Anything except linear is just added as it is
+                        newlayer.append(nested_layer)
+                    else:
+                        # If the layer is linear we need to parametrise it, so
+                        # Get dimensions
+                        input_dim = nested_layer.in_features
+                        # Set new layer
+                        newlayer.append(torch.nn.Linear(input_dim, output_dim))
+                # Set the new Seq layer by replacing using attribute
+                # **cant set manually due to generator is trying to access list
+                setattr(model, seq_layername, torch.nn.Sequential(*newlayer))
+                break
 
         return model
