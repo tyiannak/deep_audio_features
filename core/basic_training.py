@@ -57,7 +57,9 @@ def train_model(folders=None, ofile=None):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"DEVICE: {device}")
     # Create model and send to device
-    model = CNN1(output_dim=len(classes))
+    height = max_seq_length
+    width = train_set.X[0].shape[1]
+    model = CNN1(height=height, width=width, output_dim=len(classes))
     model.to(device)
     print(model)
     # Add max_seq_length to model
