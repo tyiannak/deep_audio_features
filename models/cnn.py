@@ -1,20 +1,9 @@
-import copy
-import re
-import os
-import numpy as np
-from sklearn.preprocessing import LabelEncoder
-from sklearn.metrics import accuracy_score, f1_score, recall_score
-
-import torch
 import torch.nn as nn
-import torch.nn.functional as F
-import torch.optim as optim
-from torch.utils.data import Dataset
-from torch.utils.data import SubsetRandomSampler, DataLoader
 
 
 class CNN1(nn.Module):
-    def __init__(self, height, width, output_dim=7, first_channels=32, kernel_size=5):
+    def __init__(self, height, width, output_dim=7, first_channels=32,
+                 kernel_size=5):
         super(CNN1, self).__init__()
         self.num_cnn_layers = 3
         self.cnn_channels = 2
@@ -23,20 +12,23 @@ class CNN1(nn.Module):
         self.first_channels = first_channels
 
         self.layer1 = nn.Sequential(
-            nn.Conv2d(1, first_channels, kernel_size=kernel_size, stride=1, padding=2),
+            nn.Conv2d(1, first_channels, kernel_size=kernel_size, stride=1,
+                      padding=2),
             nn.BatchNorm2d(first_channels),
             nn.LeakyReLU(),
             nn.MaxPool2d(kernel_size=2, stride=2))
 
         self.layer2 = nn.Sequential(
-            nn.Conv2d(first_channels, self.cnn_channels*first_channels, kernel_size=kernel_size, stride=1, padding=2),
+            nn.Conv2d(first_channels, self.cnn_channels*first_channels,
+                      kernel_size=kernel_size, stride=1, padding=2),
             nn.BatchNorm2d(self.cnn_channels*first_channels),
             nn.LeakyReLU(),
             nn.MaxPool2d(kernel_size=2, stride=2)
         )
 
         self.layer3 = nn.Sequential(
-            nn.Conv2d(2*first_channels, (self.cnn_channels**2)*first_channels, kernel_size=kernel_size, stride=1, padding=2),
+            nn.Conv2d(2*first_channels, (self.cnn_channels**2)*first_channels,
+                      kernel_size=kernel_size, stride=1, padding=2),
             nn.BatchNorm2d((self.cnn_channels**2)*first_channels),
             nn.LeakyReLU(),
             nn.MaxPool2d(kernel_size=2, stride=2)
@@ -80,5 +72,6 @@ class CNN1(nn.Module):
     def calc_out_size(self):
         height = int(self.height / 8)
         width = int(self.width / 8)
-        kernels = self.cnn_channels * (self.num_cnn_layers - 1) * self.first_channels
+        kernels = self.cnn_channels * (self.num_cnn_layers - 1) * \
+                  self.first_channels
         return kernels * height * width
