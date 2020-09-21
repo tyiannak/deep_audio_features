@@ -86,6 +86,8 @@ def train_model(folders=None, ofile=None):
                                                  cnn=CNN_BOOLEAN,
                                                  validation_epochs=5,
                                                  early_stopping=True)
+    print(_epochs)
+    print(valid_accuracy)
     timestamp = time.ctime()
     if ofile is None:
         ofile = f"{best_model.__class__.__name__}_{_epochs}_{timestamp}.pt"
@@ -93,6 +95,8 @@ def train_model(folders=None, ofile=None):
         ofile = str(ofile)
         if '.pt' not in ofile or '.pkl' not in ofile:
             ofile = ''.join([ofile, '.pt'])
+    if not os.path.exists(VARIABLES_FOLDER):
+        os.makedirs(VARIABLES_FOLDER)
     modelname = os.path.join(
         VARIABLES_FOLDER, ofile)
     print(f"\nSaving model to: {modelname}\n")
