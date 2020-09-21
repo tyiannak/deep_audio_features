@@ -1,11 +1,8 @@
 import argparse
 import os
-import sys
 import time
-
 import torch
 from torch.utils.data import DataLoader
-import numpy as np
 
 import config
 from config import EPOCHS, CNN_BOOLEAN, VARIABLES_FOLDER
@@ -37,21 +34,25 @@ def train_model(folders=None, ofile=None):
 
     # Load sets
     train_set = FeatureExtractorDataset(X=X_train, y=y_train,
-                                        feature_extraction_method=config.FEATURE_EXTRACTION_METHOD,
+                                        fe_method=
+                                        config.FEATURE_EXTRACTION_METHOD,
                                         oversampling=config.OVERSAMPLING,
                                         max_sequence_length=max_seq_length)
 
     eval_set = FeatureExtractorDataset(X=X_eval, y=y_eval,
-                                       feature_extraction_method=config.FEATURE_EXTRACTION_METHOD,
+                                       fe_method=
+                                       config.FEATURE_EXTRACTION_METHOD,
                                        oversampling=config.OVERSAMPLING,
                                        max_sequence_length=max_seq_length)
 
     # Add dataloader
     train_loader = DataLoader(
-        train_set, batch_size=config.BATCH_SIZE, num_workers=4, drop_last=True, shuffle=True)
+        train_set, batch_size=config.BATCH_SIZE, num_workers=4, drop_last=True,
+        shuffle=True)
 
     valid_loader = DataLoader(
-        eval_set, batch_size=config.BATCH_SIZE, num_workers=4, drop_last=True, shuffle=True)
+        eval_set, batch_size=config.BATCH_SIZE, num_workers=4, drop_last=True,
+        shuffle=True)
 
     # use GPU if available
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -66,7 +67,8 @@ def train_model(folders=None, ofile=None):
     model.max_sequence_length = max_seq_length
 
     print('Model parameters:{}'.format(sum(p.numel()
-                                           for p in model.parameters() if p.requires_grad)))
+                                           for p in model.parameters()
+                                           if p.requires_grad)))
 
     ##################################
     # TRAINING PIPELINE
@@ -74,18 +76,17 @@ def train_model(folders=None, ofile=None):
     loss_function = torch.nn.CrossEntropyLoss()
     optimizer = torch.optim.AdamW(params=model.parameters(), weight_decay=.02)
 
-    best_model, train_losses, valid_losses, train_accuracy, valid_accuracy, _epochs = train_and_validate(model=model,
-                                                                                                         train_loader=train_loader,
-                                                                                                         valid_loader=valid_loader,
-                                                                                                         loss_function=loss_function,
-                                                                                                         optimizer=optimizer,
-                                                                                                         epochs=EPOCHS,
-                                                                                                         cnn=CNN_BOOLEAN,
-                                                                                                         validation_epochs=5,
-                                                                                                         early_stopping=True)
-
+    best_model, train_losses, valid_losses, train_accuracy, \
+    valid_accuracy, _epochs = train_and_validate(model=model,
+                                                 train_loader=train_loader,
+                                                 valid_loader=valid_loader,
+                                                 loss_function=loss_function,
+                                                 optimizer=optimizer,
+                                                 epochs=EPOCHS,
+                                                 cnn=CNN_BOOLEAN,
+                                                 validation_epochs=5,
+                                                 early_stopping=True)
     timestamp = time.ctime()
-
     if ofile is None:
         ofile = f"{best_model.__class__.__name__}_{_epochs}_{timestamp}.pt"
     else:

@@ -8,22 +8,19 @@ from utils import sound_processing
 class FeatureExtractorDataset(Dataset):
     """Custom PyTorch Dataset for preparing features from wav inputs."""
 
-    def __init__(self, X, y, feature_extraction_method="MFCC", oversampling=False, max_sequence_length=281):
+    def __init__(self, X, y, fe_method="MFCC",
+                 oversampling=False, max_sequence_length=281):
         """Create all important variables for dataset tokenization
 
         Arguments:
         ----------
             X {list} : List of training samples.
-
             y {list} : List of training labels.
-
-            feature_extraction_method {string} : What method extracts the features.
-
+            fe_method {string} : The method that extracts the features.
             oversampling {bool} : Resampling technique to be applied.
-
             max_sequence_length {int} : Max sequence length of the set.
         """
-        self.feature_extraction_method = feature_extraction_method
+        self.fe_method = fe_method
         self.max_sequence_length = max_sequence_length
 
         if oversampling is True:
@@ -34,7 +31,7 @@ class FeatureExtractorDataset(Dataset):
             X = np.squeeze(X)
 
         # Depending on the extraction method get X
-        if feature_extraction_method == "MEL_SPECTROGRAM":
+        if fe_method == "MEL_SPECTROGRAM":
             # Get file read using librosa
             X_parsed = [sound_processing.load_wav(x) for x in X]
             # Get spectrogram
@@ -45,7 +42,7 @@ class FeatureExtractorDataset(Dataset):
             # Get a spectrogram example
             # sound_processing.preview_melspectrogram(X[1])
 
-        elif feature_extraction_method == "MFCC":
+        elif fe_method == "MFCC":
             # Get file read using librosa
             X_parsed = [sound_processing.load_wav(x) for x in X]
             # Get features
@@ -53,8 +50,8 @@ class FeatureExtractorDataset(Dataset):
             # X: (#samples, seq_len, #features)
             X = [np.swapaxes(x, 0, 1) for x in X]
         else:
-            raise NameError(
-                f'Not known method of feature extraction: {feature_extraction_method}')
+            raise NameError(f'Not known method of feature extraction: '
+                            f'{fe_method}')
         # Create tensor for labels
         self.y = torch.tensor(y, dtype=int)
         # Get all lengths before zero padding
@@ -83,17 +80,18 @@ class FeatureExtractorDataset(Dataset):
                 * label [int] -- [Label of an sample]
                 * len [int] -- [Original length of sample]
         """
-        # print(self.X[index].size(), self.y[index].size(), self.lengths[index].size())
         return self.X[index], self.y[index], self.lengths[index]
 
     def zero_pad_and_stack(self, X,):
         """
-        This function performs zero padding on a list of features and forms them into a numpy 3D array
+        This function performs zero padding on a list of features and forms
+        them into a numpy 3D array
 
         Returns:
-            padded: a 3D numpy array of shape num_sequences x max_sequence_length x feature_dimension
+            padded: a 3D numpy array of shape
+            num_sequences x max_sequence_length x feature_dimension
         """
-        if self.feature_extraction_method == "MFCC":
+        if self.fe_method == "MFCC":
             max_length = self.lengths.max()
 
             feature_dim = X[0].shape[-1]
@@ -113,7 +111,7 @@ class FeatureExtractorDataset(Dataset):
                 padded[i, :, :] = X[i]
             return padded
 
-        elif self.feature_extraction_method == "MEL_SPECTROGRAM":
+        elif self.fe_method == "MEL_SPECTROGRAM":
             max_length = self.max_sequence_length  # self.lengths.max()
 
             feature_dim = X[0].shape[-1]

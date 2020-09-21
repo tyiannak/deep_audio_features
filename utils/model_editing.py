@@ -14,7 +14,8 @@ Print whether a layer updates its weights or not.
     print("Layer -> Requires_grad ?")
     for ch1 in model.children():
         for layer in ch1.children():
-            if isinstance(layer, torch.nn.Conv2d) or isinstance(layer, torch.nn.Linear):
+            if isinstance(layer, torch.nn.Conv2d) or \
+                    isinstance(layer, torch.nn.Linear):
                 print(f"{layer} -> {layer.weight.requires_grad}")
     print("--------------------------------")
     print('\n\n')
@@ -48,7 +49,8 @@ Returns:
 
     if layers_dropped not in list(range(1, len(list(model.children()))+1)):
         raise ArithmeticError(
-            f'Please check out the number of layers to be removed ({layers_dropped}).')
+            f'Please check out the number of layers to '
+            f'be removed ({layers_dropped}).')
 
     # Iterate to remove layers
     new_model_layers = []
@@ -60,7 +62,8 @@ Returns:
         for child in layer.children():
             # If layer contains a Linear layer flatten input before layer
             if isinstance(child, torch.nn.Linear) and flattened is False:
-                # Add a flatten module. In order to do this remove last added layer
+                # Add a flatten module.
+                # In order to do this remove last added layer
                 new_model_layers = new_model_layers[:-1]
                 new_model_layers.extend([Flatten(), layer])
                 flattened = True
@@ -76,7 +79,8 @@ Returns:
     return new_model
 
 
-def fine_tune_model(model=None, output_dim=None, strategy=0, deepcopy=False, *args, **kwargs):
+def fine_tune_model(model=None, output_dim=None, strategy=0,
+                    deepcopy=False, *args, **kwargs):
     """Fine tune a given model.
 
 # Arguments:
@@ -118,7 +122,8 @@ def fine_tune_model(model=None, output_dim=None, strategy=0, deepcopy=False, *ar
 
         named_children = list(model.named_children())
         for seq_layername, seq_layer in named_children[::-1]:
-            if any([isinstance(c, torch.nn.Linear) for c in seq_layer.children()]):
+            if any([isinstance(c, torch.nn.Linear)
+                    for c in seq_layer.children()]):
                 newlayer = []
                 for nested_layer in seq_layer.children():
                     if not isinstance(nested_layer, torch.nn.Linear):
@@ -147,7 +152,8 @@ def fine_tune_model(model=None, output_dim=None, strategy=0, deepcopy=False, *ar
         named_children = list(model.named_children())
         for seq_layername, seq_layer in named_children:
             # Find all Conv2d layers and freeze weights
-            if any([isinstance(c, torch.nn.Conv2d) for c in seq_layer.children()]):
+            if any([isinstance(c, torch.nn.Conv2d)
+                    for c in seq_layer.children()]):
                 for nested_layer in seq_layer.children():
                     # Skip all except Conv2d
                     if not isinstance(nested_layer, torch.nn.Conv2d):
@@ -160,7 +166,8 @@ def fine_tune_model(model=None, output_dim=None, strategy=0, deepcopy=False, *ar
                         raise e("Error while trying to turn off gradients.")
 
         for seq_layername, seq_layer in named_children[::-1]:
-            if any([isinstance(c, torch.nn.Linear) for c in seq_layer.children()]):
+            if any([isinstance(c, torch.nn.Linear)
+                    for c in seq_layer.children()]):
                 newlayer = []
                 for nested_layer in seq_layer.children():
                     if not isinstance(nested_layer, torch.nn.Linear):
