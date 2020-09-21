@@ -41,7 +41,7 @@ Returns:
     test_set = FeatureExtractorDataset(X=[ifile],
                                        # Random class -- does not matter at all
                                        y=[0],
-                                       feature_extraction_method="MEL_SPECTROGRAM",
+                                       fe_method="MEL_SPECTROGRAM",
                                        oversampling=False,
                                        max_sequence_length=max_seq_length)
 
