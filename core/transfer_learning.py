@@ -54,12 +54,12 @@ def transfer_learning(model=None, folders=None, strategy=0):
     # ====== DATASETS =================================
     # Load sets
     train_set = FeatureExtractorDataset(X=X_train, y=y_train,
-                                        feature_extraction_method=config.FEATURE_EXTRACTION_METHOD,
+                                        fe_method=config.FEATURE_EXTRACTION_METHOD,
                                         oversampling=config.OVERSAMPLING,
                                         max_sequence_length=max_seq_length)
 
     eval_set = FeatureExtractorDataset(X=X_eval, y=y_eval,
-                                       feature_extraction_method=config.FEATURE_EXTRACTION_METHOD,
+                                       fe_method=config.FEATURE_EXTRACTION_METHOD,
                                        oversampling=config.OVERSAMPLING,
                                        max_sequence_length=max_seq_length)
 
