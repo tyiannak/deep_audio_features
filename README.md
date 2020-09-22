@@ -17,7 +17,7 @@ source scripts/setup_paths.py
 ##### training script
 
 ```python
-python3 core/basic_training.py -i /path/to/folder1 /path/to/folder2
+python3 bin/basic_training.py -i /path/to/folder1 /path/to/folder2
 ```
 `-i` : select the folders where the data will be loaded from.
 `-o` : select the exported file name.
@@ -25,7 +25,7 @@ python3 core/basic_training.py -i /path/to/folder1 /path/to/folder2
 ##### testing script
 
 ```python
-python3 core/basic_test.py -m /path/to/model/ -i /path/to/file (-s)
+python3 bin/basic_test.py -m /path/to/model/ -i /path/to/file (-s)
 ```
 `-i` : select the folders  where the testing data will be loaded from.
 `-m` : select a model to apply testing.
@@ -36,7 +36,7 @@ python3 core/basic_test.py -m /path/to/model/ -i /path/to/file (-s)
 ##### transfer learning script
 
 ```
-python3 core/transfer_learning.py -m /path/to/model -i /path/to/folder1 /path/to/folder2 -s
+python3 bin/transfer_learning.py -m /path/to/model -i /path/to/folder1 /path/to/folder2 -s
 ```
 `-m` : select a model to apply fine-tuning.
 `-i` : select the folders where the data will be loaded from.
