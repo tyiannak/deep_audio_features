@@ -74,7 +74,9 @@ def train_model(folders=None, ofile=None):
     # TRAINING PIPELINE
     ##################################
     loss_function = torch.nn.CrossEntropyLoss()
-    optimizer = torch.optim.AdamW(params=model.parameters(), weight_decay=.02)
+    optimizer = torch.optim.AdamW(params=model.parameters(),
+                                  lr=0.001,
+                                  weight_decay=.02)
 
     best_model, train_losses, valid_losses, train_accuracy, \
     valid_accuracy, _epochs = train_and_validate(model=model,
