@@ -1,11 +1,8 @@
 import argparse
 import os
-import sys
 import time
-
 import torch
 from torch.utils.data import DataLoader
-import numpy as np
 
 import config
 from config import EPOCHS, CNN_BOOLEAN, VARIABLES_FOLDER
@@ -65,10 +62,12 @@ def transfer_learning(model=None, folders=None, strategy=0):
 
     # Add dataloader
     train_loader = DataLoader(
-        train_set, batch_size=config.BATCH_SIZE, num_workers=4, drop_last=True, shuffle=True)
+        train_set, batch_size=config.BATCH_SIZE, num_workers=4, drop_last=True,
+        shuffle=True)
 
     valid_loader = DataLoader(
-        eval_set, batch_size=config.BATCH_SIZE, num_workers=4, drop_last=True, shuffle=True)
+        eval_set, batch_size=config.BATCH_SIZE, num_workers=4, drop_last=True,
+        shuffle=True)
 
     # ======= MODEL =================================================
 
@@ -86,7 +85,8 @@ def transfer_learning(model=None, folders=None, strategy=0):
 
     # Add max_seq_length to model
     print('Model parameters:{}'.format(sum(p.numel()
-                                           for p in model.parameters() if p.requires_grad)))
+                                           for p in model.parameters()
+                                           if p.requires_grad)))
 
     ##################################
     # TRAINING PIPELINE
@@ -94,15 +94,16 @@ def transfer_learning(model=None, folders=None, strategy=0):
     loss_function = torch.nn.CrossEntropyLoss()
     optimizer = torch.optim.AdamW(params=model.parameters(), weight_decay=.02)
 
-    best_model, train_losses, valid_losses, train_accuracy, valid_accuracy, _epochs = train_and_validate(model=model,
-                                                                                                         train_loader=train_loader,
-                                                                                                         valid_loader=valid_loader,
-                                                                                                         loss_function=loss_function,
-                                                                                                         optimizer=optimizer,
-                                                                                                         epochs=EPOCHS,
-                                                                                                         cnn=CNN_BOOLEAN,
-                                                                                                         validation_epochs=5,
-                                                                                                         early_stopping=True)
+    best_model, train_losses, valid_losses, train_accuracy, \
+    valid_accuracy, _epochs = train_and_validate(model=model,
+                                                 train_loader=train_loader,
+                                                 valid_loader=valid_loader,
+                                                 loss_function=loss_function,
+                                                 optimizer=optimizer,
+                                                 epochs=EPOCHS,
+                                                 cnn=CNN_BOOLEAN,
+                                                 validation_epochs=5,
+                                                 early_stopping=True)
 
     timestamp = time.ctime()
     model_id = f"{best_model.__class__.__name__}_{_epochs}_{timestamp}.pt"
