@@ -109,46 +109,20 @@ def fine_tune_model(model=None, output_dim=None, strategy=0,
     if deepcopy is True:
         model = copy.deepcopy(model)
 
-    # Train the entire model
-    if strategy == 0:
-        # Just adjust the output dimentions
-
+    if strategy == 0: # Train the entire model
         # Get all layers
         model_layers = [y for x in model.children() for y in x.children()]
         if model_layers == []:
             # Has not children level 2 => functional
             FUNCTIONAL = True
             raise NotImplementedError()
-
         named_children = list(model.named_children())
-        for seq_layername, seq_layer in named_children[::-1]:
-            if any([isinstance(c, torch.nn.Linear)
-                    for c in seq_layer.children()]):
-                newlayer = []
-                for nested_layer in seq_layer.children():
-                    if not isinstance(nested_layer, torch.nn.Linear):
-                        # Anything except linear is just added as it is
-                        newlayer.append(nested_layer)
-                    else:
-                        # If the layer is linear we need to parametrise it, so
-                        # Get dimensions
-                        input_dim = nested_layer.in_features
-                        # Set new layer
-                        newlayer.append(torch.nn.Linear(input_dim, output_dim))
-                # Set the new Seq layer by replacing using attribute
-                # **cant set manually due to generator is trying to access list
-                setattr(model, seq_layername, torch.nn.Sequential(*newlayer))
-                break
 
-        return model
-
-    # Train only linear layers
-    if strategy == 1:
+    elif strategy == 1: # Train only linear layers
         # Freeze all layers except for the linear
         model_layers = [y for x in model.children() for y in x.children()]
         if model_layers == []:
             raise NotImplementedError()
-
         named_children = list(model.named_children())
         for seq_layername, seq_layer in named_children:
             # Find all Conv2d layers and freeze weights
@@ -165,23 +139,23 @@ def fine_tune_model(model=None, output_dim=None, strategy=0,
                     except Exception as e:
                         raise e("Error while trying to turn off gradients.")
 
-        for seq_layername, seq_layer in named_children[::-1]:
-            if any([isinstance(c, torch.nn.Linear)
-                    for c in seq_layer.children()]):
-                newlayer = []
-                for nested_layer in seq_layer.children():
-                    if not isinstance(nested_layer, torch.nn.Linear):
-                        # Anything except linear is just added as it is
-                        newlayer.append(nested_layer)
-                    else:
-                        # If the layer is linear we need to parametrise it, so
-                        # Get dimensions
-                        input_dim = nested_layer.in_features
-                        # Set new layer
-                        newlayer.append(torch.nn.Linear(input_dim, output_dim))
-                # Set the new Seq layer by replacing using attribute
-                # **cant set manually due to generator is trying to access list
-                setattr(model, seq_layername, torch.nn.Sequential(*newlayer))
-                break
+    for seq_layername, seq_layer in named_children[::-1]:
+        if any([isinstance(c, torch.nn.Linear)
+                for c in seq_layer.children()]):
+            newlayer = []
+            for nested_layer in seq_layer.children():
+                if not isinstance(nested_layer, torch.nn.Linear):
+                    # Anything except linear is just added as it is
+                    newlayer.append(nested_layer)
+                else:
+                    # If the layer is linear we need to parametrise it, so
+                    # Get dimensions
+                    input_dim = nested_layer.in_features
+                    # Set new layer
+                    newlayer.append(torch.nn.Linear(input_dim, output_dim))
+            # Set the new Seq layer by replacing using attribute
+            # **cant set manually due to generator is trying to access list
+            setattr(model, seq_layername, torch.nn.Sequential(*newlayer))
+            break
 
-        return model
+    return model
