@@ -43,19 +43,18 @@ def transfer_learning(model=None, folders=None, strategy=0):
     max_seq_length = model.max_sequence_length
     print(f"Setting max sequence length: {max_seq_length}...")
 
-    # Use data only for training and validation. Instead of using validation,
-    # we just use test data. There is no difference.
-    X_train, y_train, X_eval, y_eval = load_dataset.load(
+    # Use data only for training and validation
+    files_train, y_train, files_eval, y_eval = load_dataset.load(
         folders=folders, test=True, validation=False)
 
     # ====== DATASETS =================================
     # Load sets
-    train_set = FeatureExtractorDataset(X=X_train, y=y_train,
+    train_set = FeatureExtractorDataset(X=files_train, y=y_train,
                                         fe_method=config.FEATURE_EXTRACTION_METHOD,
                                         oversampling=config.OVERSAMPLING,
                                         max_sequence_length=max_seq_length)
 
-    eval_set = FeatureExtractorDataset(X=X_eval, y=y_eval,
+    eval_set = FeatureExtractorDataset(X=files_eval, y=y_eval,
                                        fe_method=config.FEATURE_EXTRACTION_METHOD,
                                        oversampling=config.OVERSAMPLING,
                                        max_sequence_length=max_seq_length)

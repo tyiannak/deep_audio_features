@@ -2,7 +2,6 @@ import os
 import numpy as np
 import glob2 as glob
 from sklearn.model_selection import StratifiedShuffleSplit
-
 from utils.sound_processing import get_melspectrogram, load_wav
 
 
@@ -95,7 +94,7 @@ def load(folders=None, test_val=[0.2, 0.2], test=True, validation=True):
     return X_train, y_train, X_test, y_test, X_val, y_val
 
 
-def max_sequence_length(reload=False, X=None, folders=None):
+def compute_max_seq_len(reload=False, X=None, folders=None):
     """Return max sequence length for all files."""
     if reload is True:
         if folders is None:

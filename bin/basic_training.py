@@ -25,21 +25,21 @@ def train_model(folders=None, ofile=None):
 
     # Use data only for training and validation. Instead of using validation,
     # we just use test data. There is no difference.
-    X_train, y_train, X_eval, y_eval = load_dataset.load(
+    files_train, y_train, files_eval, y_eval = load_dataset.load(
         folders=folders, test=True, validation=False)
 
     # Compute max sequence length
-    max_seq_length = load_dataset.max_sequence_length(
-        reload=False, X=X_train+X_eval)
+    max_seq_length = load_dataset.compute_max_seq_len(reload=False,
+                                                      X=files_train+files_eval)
 
     # Load sets
-    train_set = FeatureExtractorDataset(X=X_train, y=y_train,
+    train_set = FeatureExtractorDataset(X=files_train, y=y_train,
                                         fe_method=
                                         config.FEATURE_EXTRACTION_METHOD,
                                         oversampling=config.OVERSAMPLING,
                                         max_sequence_length=max_seq_length)
 
-    eval_set = FeatureExtractorDataset(X=X_eval, y=y_eval,
+    eval_set = FeatureExtractorDataset(X=files_eval, y=y_eval,
                                        fe_method=
                                        config.FEATURE_EXTRACTION_METHOD,
                                        oversampling=config.OVERSAMPLING,
@@ -86,8 +86,6 @@ def train_model(folders=None, ofile=None):
                                                  cnn=CNN_BOOLEAN,
                                                  validation_epochs=5,
                                                  early_stopping=True)
-    print(_epochs)
-    print(valid_accuracy)
     timestamp = time.ctime()
     if ofile is None:
         ofile = f"{best_model.__class__.__name__}_{_epochs}_{timestamp}.pt"
@@ -99,6 +97,10 @@ def train_model(folders=None, ofile=None):
         os.makedirs(VARIABLES_FOLDER)
     modelname = os.path.join(
         VARIABLES_FOLDER, ofile)
+
+    print(_epochs)
+    print(valid_accuracy)
+
     print(f"\nSaving model to: {modelname}\n")
     # Save model for later use
     torch.save(best_model, modelname)
