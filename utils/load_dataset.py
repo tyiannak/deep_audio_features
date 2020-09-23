@@ -96,6 +96,8 @@ def load(folders=None, test_val=[0.2, 0.2], test=True, validation=True):
 
 def compute_max_seq_len(reload=False, X=None, folders=None):
     """Return max sequence length for all files."""
+    # TODO: CHANGE THAT SO IT IS NOT REQUIRED TO RUN THE MELGRAM BUT JUST
+    # TAKE THE WINDOW STEPS
     if reload is True:
         if folders is None:
             raise AssertionError()

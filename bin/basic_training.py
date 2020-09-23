@@ -1,3 +1,15 @@
+"""
+Script for audio segment classifier training using CNNs on melgrams or mfccs
+
+Example:
+
+python3 bin/basic_training.py -i music speech silence
+-i : is the list of folders that contain audio segments (each folder --> class)
+
+model is saved in pkl folder (exact filename is printed after training)
+
+"""
+
 import argparse
 import os
 import time

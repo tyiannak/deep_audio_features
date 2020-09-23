@@ -1,3 +1,15 @@
+"""
+Transfer learning script for audio segment models
+Example:
+
+python3 bin/transfer_learning.py -m pkl/some_model.pt -i music speech -s 1
+
+-m : is the initial model
+-i : is the list of folders that contain audio segments (each folder --> class)
+-s : 0 for retraining all network weights and 1 for training only the linear
+layers
+"""
+
 import argparse
 import os
 import time
