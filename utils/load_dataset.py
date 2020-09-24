@@ -99,7 +99,6 @@ def load(folders=None, test_val=[0.2, 0.2], test=True, validation=True):
 
 def compute_max_seq_len(reload=False, X=None, folders=None):
     """Return max sequence length for all files."""
-    # TODO: CHANGE THAT SO IT IS NOT REQUIRED TO RUN THE MELGRAM BUT JUST
     # TAKE THE WINDOW STEPS
     if reload is True:
         if folders is None:
@@ -125,7 +124,6 @@ def compute_max_seq_len(reload=False, X=None, folders=None):
                      (config.HOP_LENGTH / fs) + 1)
             lengths.append(length)
 #            lengths.append(np.shape(get_melspectrogram(load_wav(f)))[0])
-#            print(lengths[-1], length)
     max_seq = np.max(lengths)
     print(f"Max sequence length in dataset: {max_seq}")
     return max_seq
