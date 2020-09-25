@@ -9,15 +9,15 @@ def load_wav(filename):
     if not os.path.exists(filename):
         raise FileNotFoundError
     # Load file using librosa
-    x, fs = librosa.load(filename)
+    x, fs = librosa.load(filename, sr=None)
     return x, fs
 
 
 def get_mfcc(x, fs):
     """Return MFCC of a given file, opened using librosa library."""
     return librosa.feature.mfcc(x, fs, n_mfcc=13,
-                                win_length=WINDOW_LENGTH * fs,
-                                hop_length=HOP_LENGTH * fs)
+                                win_length=int(WINDOW_LENGTH * fs),
+                                hop_length=int(HOP_LENGTH * fs))
 
 
 def get_mfcc_with_deltas(wav, fs):
@@ -60,9 +60,9 @@ def get_melspectrogram(x=None, fs=None, n_fft=None, hop_length=None):
         return None
     # Set some values
     if n_fft is None:
-        n_fft = WINDOW_LENGTH * fs
+        n_fft = int(WINDOW_LENGTH * fs)
     if hop_length is None:
-        hop_length = HOP_LENGTH * fs
+        hop_length = int(HOP_LENGTH * fs)
     # Get spectrogram
     spectrogram = librosa.feature.melspectrogram(y=x, sr=fs, n_fft=n_fft,
                                                  hop_length=hop_length)

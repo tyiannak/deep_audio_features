@@ -58,13 +58,11 @@ def train_model(folders=None, ofile=None):
                                        max_sequence_length=max_seq_length)
 
     # Add dataloader
-    train_loader = DataLoader(
-        train_set, batch_size=config.BATCH_SIZE, num_workers=4, drop_last=True,
-        shuffle=True)
+    train_loader = DataLoader(train_set, batch_size=config.BATCH_SIZE,
+                              num_workers=4, drop_last=True, shuffle=True)
 
-    valid_loader = DataLoader(
-        eval_set, batch_size=config.BATCH_SIZE, num_workers=4, drop_last=True,
-        shuffle=True)
+    valid_loader = DataLoader(eval_set, batch_size=config.BATCH_SIZE,
+                              num_workers=4, drop_last=True, shuffle=True)
 
     # use GPU if available
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

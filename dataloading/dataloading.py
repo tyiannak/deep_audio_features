@@ -32,26 +32,23 @@ class FeatureExtractorDataset(Dataset):
             X = np.squeeze(X)
 
         # Depending on the extraction method get X
-        if fe_method == "MEL_SPECTROGRAM":
-            # Get file read using librosa
-            X_parsed = [sound_processing.load_wav(x) for x in X]
-            # Get spectrogram
-            X = [sound_processing.get_melspectrogram(x) for x in X_parsed]
-            # (features,seq_len) -> (seq_len,features)
-            # X = [np.swapaxes(x, 0, 1) for x in X_parsed]
-            # Get a spectrogram example
-            # sound_processing.preview_melspectrogram(X[1])
 
-        elif fe_method == "MFCC":
-            # Get file read using librosa
-            X_parsed = [sound_processing.load_wav(x) for x in X]
-            # Get features
-            X = [sound_processing.get_mfcc_with_deltas(x) for x in X_parsed]
-            # X: (#samples, seq_len, #features)
-            X = [np.swapaxes(x, 0, 1) for x in X]
-        else:
-            raise NameError(f'Not known method of feature extraction: '
-                            f'{fe_method}')
+        features = []
+        fss = []
+        for audio_file in X: # for each audio file
+            # load the signal
+            signal, fs = sound_processing.load_wav(audio_file)
+            # get the features:
+            if fe_method == "MEL_SPECTROGRAM":
+                feature = sound_processing.get_melspectrogram(signal, fs=fs)
+            else:
+                feature = sound_processing.get_mfcc_with_deltas(signal, fs=fs)
+            # append to list of features
+            print(feature.shape)
+            features.append(feature)
+            fss.append(fs)
+        X = features.copy()
+
         # Create tensor for labels
         self.y = torch.tensor(y, dtype=int)
         # Get all lengths before zero padding
@@ -91,45 +88,24 @@ class FeatureExtractorDataset(Dataset):
             padded: a 3D numpy array of shape
             num_sequences x max_sequence_length x feature_dimension
         """
-        if self.fe_method == "MFCC":
+
+        if self.fe_method == "MEL_SPECTROGRAM":
+            max_length = self.max_sequence_length  # self.lengths.max()
+        else: # MFCCs
             max_length = self.lengths.max()
 
-            feature_dim = X[0].shape[-1]
-            padded = np.zeros((len(X), max_length, feature_dim))
+        feature_dim = X[0].shape[-1]
+        padded = np.zeros((len(X), max_length, feature_dim))
 
-            # Do the actual work
-            for i in range(len(X)):
-                if X[i].shape[0] < max_length:
-                    # Needs padding
-                    diff = max_length - X[i].shape[0]
-                    # pad
-                    X[i] = np.vstack((X[i], np.zeros((diff, feature_dim))))
-                else:
-                    # Instead of raising an error just truncate the file
-                    X[i] = np.take(X[i], list(range(0, max_length)), axis=0)
-                # Add to padded
-                padded[i, :, :] = X[i]
-            return padded
-
-        elif self.fe_method == "MEL_SPECTROGRAM":
-            max_length = self.max_sequence_length  # self.lengths.max()
-
-            feature_dim = X[0].shape[-1]
-            padded = np.zeros((len(X), max_length, feature_dim))
-
-            # Do the actual work
-            for i in range(len(X)):
-                if X[i].shape[0] < max_length:
-                    # Needs padding
-                    diff = max_length - X[i].shape[0]
-                    # pad
-                    X[i] = np.vstack((X[i], np.zeros((diff, feature_dim))))
-                else:
-                    # Instead of raising an error just truncate the file
-                    X[i] = np.take(X[i], list(range(0, max_length)), axis=0)
-                # Add to padded
-                padded[i, :, :] = X[i]
-            return padded
-
-        else:
-            raise AssertionError()
+        for i in range(len(X)):
+            if X[i].shape[0] < max_length:
+                # Needs padding
+                diff = max_length - X[i].shape[0]
+                # pad
+                X[i] = np.vstack((X[i], np.zeros((diff, feature_dim))))
+            else:
+                # Instead of raising an error just truncate the file
+                X[i] = np.take(X[i], list(range(0, max_length)), axis=0)
+            # Add to padded
+            padded[i, :, :] = X[i]
+        return padded
