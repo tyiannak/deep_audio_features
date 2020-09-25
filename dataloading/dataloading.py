@@ -4,6 +4,7 @@ import numpy as np
 from torch.utils.data import Dataset
 from imblearn.over_sampling import RandomOverSampler
 from utils import sound_processing
+from tqdm import tqdm
 
 
 class FeatureExtractorDataset(Dataset):
@@ -35,7 +36,8 @@ class FeatureExtractorDataset(Dataset):
 
         features = []
         fss = []
-        for audio_file in X: # for each audio file
+        print("Feature extraction")
+        for audio_file in tqdm(X):  # for each audio file
             # load the signal
             signal, fs = sound_processing.load_wav(audio_file)
             # get the features:
@@ -44,7 +46,6 @@ class FeatureExtractorDataset(Dataset):
             else:
                 feature = sound_processing.get_mfcc_with_deltas(signal, fs=fs)
             # append to list of features
-            print(feature.shape)
             features.append(feature)
             fss.append(fs)
         X = features.copy()
