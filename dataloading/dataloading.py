@@ -36,8 +36,7 @@ class FeatureExtractorDataset(Dataset):
             # Get file read using librosa
             X_parsed = [sound_processing.load_wav(x) for x in X]
             # Get spectrogram
-            X = [sound_processing.get_melspectrogram(
-                x) for x in X_parsed]
+            X = [sound_processing.get_melspectrogram(x) for x in X_parsed]
             # (features,seq_len) -> (seq_len,features)
             # X = [np.swapaxes(x, 0, 1) for x in X_parsed]
             # Get a spectrogram example
