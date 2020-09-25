@@ -1,2 +1,9 @@
-argparse==1.4.0
+tqdm==4.46.0
+glob2==0.7
+librosa==0.7.2
+imbalanced_learn==0.7.0
 torch==1.5.1
+numpy==1.18.1
+matplotlib==3.2.1
+imblearn==0.0
+scikit_learn==0.23.2
