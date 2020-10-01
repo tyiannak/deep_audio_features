@@ -2,8 +2,9 @@ import os
 import numpy as np
 import glob2 as glob
 from sklearn.model_selection import StratifiedShuffleSplit
-
-from utils.sound_processing import get_melspectrogram, load_wav
+import config
+import wave
+import contextlib
 
 
 def load(folders=None, test_val=[0.2, 0.2], test=True, validation=True):
@@ -12,12 +13,10 @@ def load(folders=None, test_val=[0.2, 0.2], test=True, validation=True):
     Arguments
     ----------
         folders {list} : A list of folders containing all samples.
-
         test_val {list} : A list containing the percenages for test and validation split.
-
         test {boolean} : If False only train samples and labels are returned.
-
-        validation {boolean} : If False only train and test samples and labels are returned.
+        validation {boolean} : If False only train and test samples and
+        labels are returned.
 
     Returns
     --------
@@ -95,8 +94,9 @@ def load(folders=None, test_val=[0.2, 0.2], test=True, validation=True):
     return X_train, y_train, X_test, y_test, X_val, y_val
 
 
-def max_sequence_length(reload=False, X=None, folders=None):
+def compute_max_seq_len(reload=False, X=None, folders=None):
     """Return max sequence length for all files."""
+    # TAKE THE WINDOW STEPS
     if reload is True:
         if folders is None:
             raise AssertionError()
@@ -109,10 +109,19 @@ def max_sequence_length(reload=False, X=None, folders=None):
             raise AssertionError()
 
     # Calculate and print max sequence number
-    l = [np.shape(get_melspectrogram(load_wav(f)))[0]
-         for f in X]
-    max_seq = np.max(l)
-    # print(f"Max sequence length in dataset: {max_seq}")
+    print(config.HOP_LENGTH, config.WINDOW_LENGTH)
+    lengths = []
+    for f in X:
+        with contextlib.closing(wave.open(f, 'r')) as fp:
+            frames = fp.getnframes()
+            fs = fp.getframerate()
+            duration = frames / float(fs)
+            length = int((duration -
+                          (config.HOP_LENGTH - config.HOP_LENGTH)) / \
+                         (config.HOP_LENGTH) + 1)
+            lengths.append(length)
+    max_seq = np.max(lengths)
+    print(f"Max sequence length in dataset: {max_seq}")
     return max_seq
 
 
