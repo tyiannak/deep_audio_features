@@ -117,7 +117,7 @@ def compute_max_seq_len(reload=False, X=None, folders=None):
             fs = fp.getframerate()
             duration = frames / float(fs)
             length = int((duration -
-                          (config.HOP_LENGTH - config.HOP_LENGTH)) / \
+                          (config.WINDOW_LENGTH - config.HOP_LENGTH)) / \
                          (config.HOP_LENGTH) + 1)
             lengths.append(length)
     max_seq = np.max(lengths)
