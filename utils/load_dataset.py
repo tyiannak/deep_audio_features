@@ -2,7 +2,7 @@ import os
 import numpy as np
 import glob2 as glob
 from sklearn.model_selection import StratifiedShuffleSplit
-import config
+from bin import config
 import wave
 import contextlib
 
