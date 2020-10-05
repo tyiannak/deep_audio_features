@@ -16,21 +16,24 @@ def train(folders, ofile=None):
 
     print('Extracting features...')
     X, y = feature_extraction.extraction(folders)
-    tuned_parameters = {'kernel': ['rbf'], 'gamma': [1e-3, 1e-4, 1e-5, 1e-6],
-                         'C': [1, 1e1, 1e2, 1e3, 1e4, 1e5]}
 
     scaler = StandardScaler()
     pca = PCA()
     clf = svm.SVC()
+    svm_parameters = {'kernel': ['rbf'], 'gamma': [1e-3, 1e-4, 1e-5, 1e-6],
+                      'C': [1, 1e1, 1e2, 1e3, 1e4, 1e5]}
+    n_components = [0.94, 0.95, 0.96, 0.97, 0.98, X.shape[1]]
+
     print('The classifier is an SVM using StandardScaler and PCA '
           'for preprocessing')
-    pipe = Pipeline(steps=[('scaler', scaler), ('pca', pca), ('SVM', clf)],
-                    memory='tmp')
+    pipe = Pipeline(steps=[('PCA', pca), ('SCALER', scaler), ('SVM', clf)],
+                    memory='sklearn_tmp_memory')
     print('Running GridSearchCV to find best SVM parameters...')
     clf = GridSearchCV(
-        pipe, dict(SVM__kernel=tuned_parameters['kernel'],
-                   SVM__gamma=tuned_parameters['gamma'],
-                   SVM__C=tuned_parameters['C']), cv=5,
+        pipe, dict(PCA__n_components=n_components,
+                   SVM__kernel=svm_parameters['kernel'],
+                   SVM__gamma=svm_parameters['gamma'],
+                   SVM__C=svm_parameters['C']), cv=5,
                    scoring='f1_macro', n_jobs=-1)
 
     clf.fit(X, y)
