@@ -8,10 +8,7 @@ from collections import Counter
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 from sklearn.model_selection import GridSearchCV
-from sklearn.model_selection import StratifiedKFold, RepeatedStratifiedKFold
-from imblearn.over_sampling import RandomOverSampler
-from imblearn.under_sampling import RandomUnderSampler
-from imblearn.combine import SMOTEENN
+from sklearn.model_selection import RepeatedStratifiedKFold
 from bin.config import VARIABLES_FOLDER
 import feature_extraction
 
@@ -34,7 +31,7 @@ def train(folders, ofile=None, kernel='rbf', metric='f1_macro'):
     pipe = Pipeline(steps=[('PCA', pca), ('SCALER', scaler), ('SVM', clf)],
                     memory='sklearn_tmp_memory')
     print('Running GridSearchCV to find best SVM parameters...')
-    #cv = StratifiedKFold(n_splits=10, shuffle=True)
+
     cv = RepeatedStratifiedKFold(n_splits=5, n_repeats=3)
     clf = GridSearchCV(
         pipe, dict(PCA__n_components=n_components,
