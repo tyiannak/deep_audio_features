@@ -28,7 +28,7 @@ def test(folders, model, ofile=None):
         os.makedirs(VARIABLES_FOLDER)
     out_path = os.path.join(
         VARIABLES_FOLDER, ofile)
-    print(f"\nSaving model to: {out_path}\n")
+    print(f"\nSaving classification report to: {out_path}\n")
 
     pickle.dump(classification_report, open(out_path, 'wb'))
 
