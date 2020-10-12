@@ -68,6 +68,7 @@ def get_melspectrogram(x=None, fs=None, n_fft=None, hop_length=None):
                                                  hop_length=hop_length)
     # Convert to MEL-Scale
     spectrogram_dB = librosa.power_to_db(spectrogram, ref=np.max)  # (n_mel,t)
+
     # Transpose to return (time,n_mel)
     return spectrogram_dB.T
 

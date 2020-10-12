@@ -3,8 +3,9 @@ import torch.nn as nn
 
 class CNN1(nn.Module):
     def __init__(self, height, width, output_dim=7, first_channels=32,
-                 kernel_size=5):
+                 kernel_size=5, zero_pad=False):
         super(CNN1, self).__init__()
+        self.zero_pad = zero_pad
         self.num_cnn_layers = 3
         self.cnn_channels = 2
         self.height = height

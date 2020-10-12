@@ -5,13 +5,17 @@ from torch.utils.data import Dataset
 from imblearn.over_sampling import RandomOverSampler
 from utils import sound_processing
 from tqdm import tqdm
+from PIL import Image
+from config import SPECTOGRAM_SIZE
+
 
 
 class FeatureExtractorDataset(Dataset):
     """Custom PyTorch Dataset for preparing features from wav inputs."""
 
     def __init__(self, X, y, fe_method="MFCC",
-                 oversampling=False, max_sequence_length=281):
+                 oversampling=False, max_sequence_length=281,
+                 zero_pad=False, size=SPECTOGRAM_SIZE):
         """Create all important variables for dataset tokenization
 
         Arguments:
@@ -48,7 +52,7 @@ class FeatureExtractorDataset(Dataset):
             # append to list of features
             features.append(feature)
             fss.append(fs)
-        X = features.copy()
+        self.features = features
 
         # Create tensor for labels
         self.y = torch.tensor(y, dtype=int)
@@ -56,11 +60,7 @@ class FeatureExtractorDataset(Dataset):
         lengths = np.array([len(x) for x in X])
         self.lengths = torch.tensor(lengths)
 
-        # Zero pad all samples
-        X = self.zero_pad_and_stack(X)
-        # Create tensor for features
-        self.X = torch.from_numpy(X).type('torch.FloatTensor')
-        print(np.shape(self.X))
+        self.handle_lengths(zero_pad, size)
 
     def __len__(self):
         """Returns length of FeatureExtractor dataset."""
@@ -80,7 +80,19 @@ class FeatureExtractorDataset(Dataset):
         """
         return self.X[index], self.y[index], self.lengths[index]
 
-    def zero_pad_and_stack(self, X,):
+    def handle_lengths(self, zero_pad=False, size=SPECTOGRAM_SIZE):
+
+        if zero_pad:
+            X = self.zero_pad_and_stack()
+            print('Using zero padding with max_length = {}'.format(self.max_sequence_length))
+        else:
+            X = self.resize(size)
+            print('Using resizing with new_size = {}'.format(size))
+
+        X = np.asarray(X)
+        self.X = torch.from_numpy(X).type('torch.FloatTensor')
+
+    def zero_pad_and_stack(self):
         """
         This function performs zero padding on a list of features and forms
         them into a numpy 3D array
@@ -89,6 +101,7 @@ class FeatureExtractorDataset(Dataset):
             padded: a 3D numpy array of shape
             num_sequences x max_sequence_length x feature_dimension
         """
+        X = self.features.copy()
 
         if self.fe_method == "MEL_SPECTROGRAM":
             max_length = self.max_sequence_length  # self.lengths.max()
@@ -98,15 +111,30 @@ class FeatureExtractorDataset(Dataset):
         feature_dim = X[0].shape[-1]
         padded = np.zeros((len(X), max_length, feature_dim))
 
+        out_X = []
         for i in range(len(X)):
             if X[i].shape[0] < max_length:
                 # Needs padding
                 diff = max_length - X[i].shape[0]
                 # pad
-                X[i] = np.vstack((X[i], np.zeros((diff, feature_dim))))
+                tmp = np.concatenate((X[i], np.zeros((diff, feature_dim))), axis=0)
+                out_X.append(tmp)
             else:
                 # Instead of raising an error just truncate the file
-                X[i] = np.take(X[i], list(range(0, max_length)), axis=0)
+                tmp = np.take(X[i], list(range(0, max_length)), axis=0)
+                out_X.append(tmp)
             # Add to padded
-            padded[i, :, :] = X[i]
+            padded[i, :, :] = tmp
         return padded
+
+    def resize(self, size=SPECTOGRAM_SIZE):
+
+        X = self.features.copy()
+        X_resized = []
+        for x in X:
+            spec = Image.fromarray(x)
+            spec = spec.resize(size)
+            spec = np.array(spec)
+            X_resized.append(spec)
+
+        return X_resized

@@ -26,7 +26,8 @@ from dataloading.dataloading import FeatureExtractorDataset
 # sys.path.insert(0, '/'.join(os.path.abspath(__file__).split(' /')[:-2]))
 
 
-def transfer_learning(model=None, folders=None, strategy=0):
+def transfer_learning(model=None, folders=None, strategy=0,
+                      zero_pad=config.ZERO_PAD, size=config.SPECTOGRAM_SIZE):
     """Transfer learning from all folders given to a model."""
 
     # Arguments check
@@ -64,12 +65,16 @@ def transfer_learning(model=None, folders=None, strategy=0):
     train_set = FeatureExtractorDataset(X=files_train, y=y_train,
                                         fe_method=config.FEATURE_EXTRACTION_METHOD,
                                         oversampling=config.OVERSAMPLING,
-                                        max_sequence_length=max_seq_length)
+                                        max_sequence_length=max_seq_length,
+                                        zero_pad=zero_pad,
+                                        size=size)
 
     eval_set = FeatureExtractorDataset(X=files_eval, y=y_eval,
                                        fe_method=config.FEATURE_EXTRACTION_METHOD,
                                        oversampling=config.OVERSAMPLING,
-                                       max_sequence_length=max_seq_length)
+                                       max_sequence_length=max_seq_length,
+                                       zero_pad=zero_pad,
+                                       size=size)
 
     # Add dataloader
     train_loader = DataLoader(

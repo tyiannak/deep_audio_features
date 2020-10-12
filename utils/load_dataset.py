@@ -13,7 +13,7 @@ def load(folders=None, test_val=[0.2, 0.2], test=True, validation=True):
     Arguments
     ----------
         folders {list} : A list of folders containing all samples.
-        test_val {list} : A list containing the percenages for test and validation split.
+        test_val {list} : A list containing the percentages for test and validation split.
         test {boolean} : If False only train samples and labels are returned.
         validation {boolean} : If False only train and test samples and
         labels are returned.
@@ -63,7 +63,7 @@ def load(folders=None, test_val=[0.2, 0.2], test=True, validation=True):
     X_train, y_train = [], []
     X_val, y_val = [], []
     # First split
-    sss = StratifiedShuffleSplit(n_splits=1, test_size=test_p)
+    sss = StratifiedShuffleSplit(n_splits=1, test_size=test_p, random_state=0)
     train_idx, test_idx = next(
         sss.split(filenames, labels))
     # Train
@@ -80,7 +80,7 @@ def load(folders=None, test_val=[0.2, 0.2], test=True, validation=True):
         return X_train_, y_train_, X_test, y_test
 
     # If valuation is True split again
-    sss = StratifiedShuffleSplit(n_splits=1, test_size=val_p)
+    sss = StratifiedShuffleSplit(n_splits=1, test_size=val_p, random_state=0)
     train_idx, val_idx = next(sss.split(X_train_, y_train_))
     # Train after both splits
     for idx in train_idx:

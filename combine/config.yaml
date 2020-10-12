@@ -1,0 +1,7 @@
+classifier:
+  kernel: rbf
+  metric: f1_macro
+
+neural_nets:
+  path_to_folder: neaural_nets
+

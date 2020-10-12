@@ -300,14 +300,16 @@ def test(model, dataloader, cnn=False, classifier=True):
         predictions = torch.argmax(out, -1)
         # Save predictions
         y_pred.append(predictions.cpu().data.numpy())
+        y_true.append(labels.cpu().data.numpy())
 
     # Get metrics
     y_pred = np.array(y_pred).flatten()
+    y_true = np.array(y_true).flatten()
 
     # Detach out
     out = out.cpu().detach().numpy()
 
-    return out, y_pred
+    return out, y_pred, y_true
 
 
 def progress(loss, epoch, batch, batch_size, dataset_size):

@@ -17,7 +17,7 @@ import torch
 from torch.utils.data import DataLoader
 
 import config
-from config import EPOCHS, CNN_BOOLEAN, VARIABLES_FOLDER
+from config import EPOCHS, CNN_BOOLEAN, VARIABLES_FOLDER, SPECTOGRAM_SIZE
 from models.cnn import CNN1
 from lib.training import train_and_validate
 from utils import load_dataset
@@ -26,9 +26,13 @@ from dataloading.dataloading import FeatureExtractorDataset
 # sys.path.insert(0, '/'.join(os.path.abspath(__file__).split(' /')[:-2]))
 
 
-def train_model(folders=None, ofile=None):
+def train_model(folders=None, ofile=None, zero_pad=config.ZERO_PAD, size=config.SPECTOGRAM_SIZE):
     """Train a given model on a given dataset"""
     # Check that folders exist
+    torch.manual_seed(0)
+    torch.cuda.manual_seed_all(0)
+    torch.backends.cudnn.deterministic = True
+
     if folders is None:
         raise FileNotFoundError()
 
@@ -49,13 +53,17 @@ def train_model(folders=None, ofile=None):
                                         fe_method=
                                         config.FEATURE_EXTRACTION_METHOD,
                                         oversampling=config.OVERSAMPLING,
-                                        max_sequence_length=max_seq_length)
+                                        max_sequence_length=max_seq_length,
+                                        zero_pad=zero_pad,
+                                        size=size)
 
     eval_set = FeatureExtractorDataset(X=files_eval, y=y_eval,
                                        fe_method=
                                        config.FEATURE_EXTRACTION_METHOD,
                                        oversampling=config.OVERSAMPLING,
-                                       max_sequence_length=max_seq_length)
+                                       max_sequence_length=max_seq_length,
+                                       zero_pad=zero_pad,
+                                       size=size)
 
     # Add dataloader
     train_loader = DataLoader(train_set, batch_size=config.BATCH_SIZE,
@@ -68,11 +76,15 @@ def train_model(folders=None, ofile=None):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"DEVICE: {device}")
     # Create model and send to device
-    height = max_seq_length
-    width = train_set.X[0].shape[1]
-    model = CNN1(height=height, width=width, output_dim=len(classes))
+
+    if zero_pad:
+        height = max_seq_length
+        width = train_set.X[0].shape[1]
+    else:
+        height = SPECTOGRAM_SIZE[1]
+        width = SPECTOGRAM_SIZE[0]
+    model = CNN1(height=height, width=width, output_dim=len(classes), zero_pad=zero_pad)
     model.to(device)
-    print(model)
     # Add max_seq_length to model
     model.max_sequence_length = max_seq_length
 

@@ -4,9 +4,11 @@ from torch.utils.data import DataLoader
 from dataloading.dataloading import FeatureExtractorDataset
 from lib.training import test
 from utils.model_editing import drop_layers
+import config
 
 
-def test_model(modelpath, ifile, layers_dropped, ** kwargs):
+def test_model(modelpath, ifile, layers_dropped,  zero_pad=config.ZERO_PAD,
+               size=config.SPECTOGRAM_SIZE, ** kwargs):
     """Loads a model and predicts each classes probability
 
 Arguments:
@@ -43,7 +45,9 @@ Returns:
                                        y=[0],
                                        fe_method="MEL_SPECTROGRAM",
                                        oversampling=False,
-                                       max_sequence_length=max_seq_length)
+                                       max_sequence_length=max_seq_length,
+                                       zero_pad=zero_pad,
+                                       size=size)
 
     # Create test dataloader
     test_loader = DataLoader(dataset=test_set, batch_size=1,
@@ -51,7 +55,7 @@ Returns:
                              shuffle=False)
 
     # Forward a sample
-    out, y_pred = test(model=model, dataloader=test_loader,
+    out, y_pred, _ = test(model=model, dataloader=test_loader,
                        cnn=True,
                        classifier=True if layers_dropped == 0 else False)
 
@@ -60,6 +64,7 @@ Returns:
     #  If model has all layers can correctly predict a class
     print(y_pred)
 
+    return y_pred[0]
 
 if __name__ == '__main__':
 
