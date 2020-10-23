@@ -27,7 +27,7 @@ from dataloading.dataloading import FeatureExtractorDataset
 
 
 def transfer_learning(model=None, folders=None, strategy=0,
-                      zero_pad=config.ZERO_PAD, size=config.SPECTOGRAM_SIZE):
+                      zero_pad=config.ZERO_PAD, forced_size=None):
     """Transfer learning from all folders given to a model."""
 
     # Arguments check
@@ -62,19 +62,26 @@ def transfer_learning(model=None, folders=None, strategy=0,
 
     # ====== DATASETS =================================
     # Load sets
+    if forced_size is None:
+        spec_size = model.spec_size
+    else:
+        spec_size = forced_size
+
     train_set = FeatureExtractorDataset(X=files_train, y=y_train,
                                         fe_method=config.FEATURE_EXTRACTION_METHOD,
                                         oversampling=config.OVERSAMPLING,
                                         max_sequence_length=max_seq_length,
                                         zero_pad=zero_pad,
-                                        size=size)
+                                        forced_size=spec_size,
+                                        fuse=config.FUSED_SPECT)
 
     eval_set = FeatureExtractorDataset(X=files_eval, y=y_eval,
                                        fe_method=config.FEATURE_EXTRACTION_METHOD,
                                        oversampling=config.OVERSAMPLING,
                                        max_sequence_length=max_seq_length,
                                        zero_pad=zero_pad,
-                                       size=size)
+                                       forced_size=spec_size,
+                                       fuse=config.FUSED_SPECT)
 
     # Add dataloader
     train_loader = DataLoader(
@@ -165,4 +172,8 @@ if __name__ == '__main__':
         raise FileNotFoundError
 
     # If everything is ok, time to start
-    transfer_learning(model=modelpath, folders=folders, strategy=strategy)
+    if config.FORCE_SIZE:
+        transfer_learning(model=modelpath, folders=folders,
+                          strategy=strategy, forced_size=config.SPECTOGRAM_SIZE)
+    else:
+        transfer_learning(model=modelpath, folders=folders, strategy=strategy)

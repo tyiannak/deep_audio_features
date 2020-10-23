@@ -7,8 +7,7 @@ from utils.model_editing import drop_layers
 import config
 
 
-def test_model(modelpath, ifile, layers_dropped,  zero_pad=config.ZERO_PAD,
-               size=config.SPECTOGRAM_SIZE, ** kwargs):
+def test_model(modelpath, ifile, layers_dropped, ** kwargs):
     """Loads a model and predicts each classes probability
 
 Arguments:
@@ -33,6 +32,10 @@ Returns:
     model = drop_layers(model, layers_dropped)
     model.max_sequence_length = max_seq_length
 
+    zero_pad = model.zero_pad
+    spec_size = model.spec_size
+    fuse = model.fuse
+
     print('Model:\n{}'.format(model))
 
     # Move to device
@@ -47,7 +50,8 @@ Returns:
                                        oversampling=False,
                                        max_sequence_length=max_seq_length,
                                        zero_pad=zero_pad,
-                                       size=size)
+                                       spec_size=spec_size,
+                                       fuse=fuse)
 
     # Create test dataloader
     test_loader = DataLoader(dataset=test_set, batch_size=1,

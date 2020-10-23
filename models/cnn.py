@@ -1,11 +1,16 @@
 import torch.nn as nn
+from bin.config import SPECTOGRAM_SIZE
 
 
 class CNN1(nn.Module):
     def __init__(self, height, width, output_dim=7, first_channels=32,
-                 kernel_size=5, zero_pad=False):
+                 kernel_size=5, zero_pad=False, spec_size=SPECTOGRAM_SIZE,
+                 fuse=False, type='classifier'):
         super(CNN1, self).__init__()
         self.zero_pad = zero_pad
+        self.spec_size = spec_size
+        self.fuse = fuse
+        self.type = type
         self.num_cnn_layers = 3
         self.cnn_channels = 2
         self.height = height
@@ -47,11 +52,12 @@ class CNN1(nn.Module):
             nn.LeakyReLU()
         )
 
-        self.linear_layer3 = nn.Sequential(
-            # nn.Dropout(0.2),
-            nn.Linear(256, output_dim),
-            nn.LeakyReLU()
-        )
+        if type == 'classifier':
+            self.linear_layer3 = nn.Sequential(
+                # nn.Dropout(0.2),
+                nn.Linear(256, output_dim),
+                nn.LeakyReLU()
+            )
 
     def forward(self, x):
         # input: (batch_size,1,max_seq,features)
@@ -66,7 +72,8 @@ class CNN1(nn.Module):
         # DNN -- pass through linear layers
         out = self.linear_layer1(out)
         out = self.linear_layer2(out)
-        out = self.linear_layer3(out)
+        if self.type == 'classifier':
+            out = self.linear_layer3(out)
 
         return out
 

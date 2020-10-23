@@ -5,8 +5,8 @@ import time
 from sklearn import svm
 from imblearn.pipeline import Pipeline
 from collections import Counter
-from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
+import yaml
 from sklearn.model_selection import GridSearchCV
 from sklearn.model_selection import RepeatedStratifiedKFold
 from bin.config import VARIABLES_FOLDER
@@ -15,27 +15,31 @@ import feature_extraction
 
 def train(folders, ofile=None, kernel='rbf', metric='f1_macro'):
 
+    with open(r'combine/config.yaml') as file:
+        modification = yaml.load(file, Loader=yaml.FullLoader)
+
     print('Extracting features...')
-    X, y = feature_extraction.extraction(folders)
+    X, y, pcas = feature_extraction.extraction(folders, modification)
+    modification['dim_reduction'] = pcas
+    print('X: {}'.format(X.shape))
+    print('y: {}'.format(y.shape))
     print(Counter(y))
 
-    scaler = StandardScaler()
-    pca = PCA()
     clf = svm.SVC(kernel=kernel, class_weight='balanced')
     svm_parameters = {'gamma': ['auto', 1e-3, 1e-4, 1e-5, 1e-6],
                       'C': [1, 1e1, 1e2, 1e3, 1e4, 1e5]}
-    n_components = [0.95, 0.965, 0.98, X.shape[1]]
 
-    print('The classifier is an SVM with {} kernel using StandardScaler and PCA '
-          'for preprocessing'.format(kernel))
-    pipe = Pipeline(steps=[('PCA', pca), ('SCALER', scaler), ('SVM', clf)],
+    #pca = PCA(n_components=0.99999)
+    #pca.fit(X)
+    print('The classifier is an SVM with {} kernel '.format(kernel))
+    pipe = Pipeline(steps=[('SVM', clf)],
                     memory='sklearn_tmp_memory')
     print('Running GridSearchCV to find best SVM parameters...')
 
     cv = RepeatedStratifiedKFold(n_splits=5, n_repeats=3)
+
     clf = GridSearchCV(
-        pipe, dict(PCA__n_components=n_components,
-                   SVM__gamma=svm_parameters['gamma'],
+        pipe, dict(SVM__gamma=svm_parameters['gamma'],
                    SVM__C=svm_parameters['C']), cv=cv,
                    scoring=metric, n_jobs=-1)
 
@@ -58,9 +62,11 @@ def train(folders, ofile=None, kernel='rbf', metric='f1_macro'):
         VARIABLES_FOLDER, ofile)
     print(f"\nSaving model to: {out_path}\n")
 
-    pickle.dump(clf, open(out_path, 'wb'))
+    modification['Classifier'] = clf
+    with open(out_path, 'wb') as handle:
+        pickle.dump(modification, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-    return clf
+    return modification
 
 
 if __name__ == '__main__':

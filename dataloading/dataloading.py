@@ -1,13 +1,11 @@
-
 import torch
 import numpy as np
 from torch.utils.data import Dataset
 from imblearn.over_sampling import RandomOverSampler
+import matplotlib.pyplot as plt
 from utils import sound_processing
 from tqdm import tqdm
 from PIL import Image
-from config import SPECTOGRAM_SIZE
-
 
 
 class FeatureExtractorDataset(Dataset):
@@ -15,7 +13,7 @@ class FeatureExtractorDataset(Dataset):
 
     def __init__(self, X, y, fe_method="MFCC",
                  oversampling=False, max_sequence_length=281,
-                 zero_pad=False, size=SPECTOGRAM_SIZE):
+                 zero_pad=False, forced_size=None, fuse=False):
         """Create all important variables for dataset tokenization
 
         Arguments:
@@ -28,6 +26,9 @@ class FeatureExtractorDataset(Dataset):
         """
         self.fe_method = fe_method
         self.max_sequence_length = max_sequence_length
+        self.fuse = fuse
+        if fuse:
+            print('Fusing spectrogram and chromagram')
 
         if oversampling is True:
             ros = RandomOverSampler()
@@ -40,27 +41,41 @@ class FeatureExtractorDataset(Dataset):
 
         features = []
         fss = []
-        print("Feature extraction")
+        print("Extracting spectrogram associated features. . .")
+        spec_sizes = []
         for audio_file in tqdm(X):  # for each audio file
             # load the signal
             signal, fs = sound_processing.load_wav(audio_file)
             # get the features:
             if fe_method == "MEL_SPECTROGRAM":
-                feature = sound_processing.get_melspectrogram(signal, fs=fs)
+                feature = sound_processing.get_melspectrogram(signal, fs=fs, fuse=fuse)
             else:
-                feature = sound_processing.get_mfcc_with_deltas(signal, fs=fs)
+                feature = sound_processing.get_mfcc_with_deltas(signal, fs=fs, fuse=fuse)
+
+            spec_sizes.append(feature.shape[0])
+
             # append to list of features
             features.append(feature)
             fss.append(fs)
         self.features = features
 
+        spec_sizes = np.asarray(spec_sizes)
+
+        self.plot_hist(spec_sizes, y)
+
+        if forced_size is None:
+            size_0 = int(np.mean(spec_sizes))
+            size_1 = 140 if fuse else 128
+            self.spec_size = (size_0, size_1)
+        else:
+            self.spec_size = forced_size
         # Create tensor for labels
         self.y = torch.tensor(y, dtype=int)
         # Get all lengths before zero padding
         lengths = np.array([len(x) for x in X])
         self.lengths = torch.tensor(lengths)
 
-        self.handle_lengths(zero_pad, size)
+        self.handle_lengths(zero_pad)
 
     def __len__(self):
         """Returns length of FeatureExtractor dataset."""
@@ -80,14 +95,19 @@ class FeatureExtractorDataset(Dataset):
         """
         return self.X[index], self.y[index], self.lengths[index]
 
-    def handle_lengths(self, zero_pad=False, size=SPECTOGRAM_SIZE):
+    def handle_lengths(self, zero_pad=False, size=None):
+
+        if size is not None:
+            spec_size = size
+        else:
+            spec_size = self.spec_size
 
         if zero_pad:
             X = self.zero_pad_and_stack()
             print('Using zero padding with max_length = {}'.format(self.max_sequence_length))
         else:
-            X = self.resize(size)
-            print('Using resizing with new_size = {}'.format(size))
+            X = self.resize(spec_size)
+            print('Using resizing with new_size = {}'.format(spec_size))
 
         X = np.asarray(X)
         self.X = torch.from_numpy(X).type('torch.FloatTensor')
@@ -127,14 +147,57 @@ class FeatureExtractorDataset(Dataset):
             padded[i, :, :] = tmp
         return padded
 
-    def resize(self, size=SPECTOGRAM_SIZE):
+    def resize(self, size=None):
+
+        if size is not None:
+            spec_size = size
+        else:
+            spec_size = self.spec_size
 
         X = self.features.copy()
         X_resized = []
         for x in X:
             spec = Image.fromarray(x)
-            spec = spec.resize(size)
+            spec = spec.resize(spec_size)
             spec = np.array(spec)
             X_resized.append(spec)
-
         return X_resized
+
+    @staticmethod
+    def group_data_by_label(spec_sizes, labels):
+        classes = np.unique(labels)
+        grouped_data = []
+        for c in classes:
+            grouped_data.append([])
+
+        for idx, spec_size in enumerate(spec_sizes):
+            grouped_data[labels[idx]].append(spec_size)
+
+        return grouped_data
+
+    def plot_hist(self, spec_sizes, labels):
+
+        labels = np.asarray(labels)
+        grouped_data = self.group_data_by_label(spec_sizes, labels)
+        plt.style.use('ggplot')
+
+        fig, axs = plt.subplots(2, 1, figsize=(15, 10))
+        fig.suptitle('Histogram of spectrogram sizes', fontsize=14)
+
+        axs[0].title.set_text('Overall')
+        axs[0].set_xlabel('Spectrogram time dimension')
+        axs[0].set_ylabel('Frequency')
+        axs[0].hist(spec_sizes, bins='auto')
+
+
+        axs[1].title.set_text('For each class')
+        axs[1].set_xlabel('Spectrogram time dimension')
+        axs[1].set_ylabel('Frequency')
+        for idx, group in enumerate(grouped_data):
+            label = 'Class {}'.format(idx)
+            axs[1].hist(group, alpha=0.5, bins='auto', label=label)
+        axs[1].legend()
+
+        plt.show()
+
+

@@ -1,7 +1,17 @@
 classifier:
-  kernel: rbf
-  metric: f1_macro
+  type: svm
+  parameters: { 'kernel': 'rbf',
+                'metric': 'f1_macro'
+  }
 
-neural_nets:
-  path_to_folder: neaural_nets
+extract_basic_features: True
+basic_features_params:
+  mid_window: 1
+  mid_step: 1
+  short_window: 0.05
+  short_step: 0.01
+
+extract_nn_features: True
+model_paths: ['pkl/CNN1_20_Fri Oct 16 11:12:50 2020.pt']
+n_components: 100
 

@@ -23,8 +23,7 @@ from utils.model_editing import drop_layers
 from bin.basic_test import test_model
 
 
-def test_report(modelpath, folders, layers_dropped,
-             zero_pad=config.ZERO_PAD, size=config.SPECTOGRAM_SIZE):
+def test_report(modelpath, folders, layers_dropped):
 
 
     model = torch.load(modelpath)
@@ -32,6 +31,9 @@ def test_report(modelpath, folders, layers_dropped,
     files_test, y_test = load_dataset.load(
         folders=folders, test=False, validation=False)
 
+    spec_size = model.spec_size
+    zero_pad = model.zero_pad
+    fuse = model.fuse
 
     # Load sets
     test_set = FeatureExtractorDataset(X=files_test, y=y_test,
@@ -40,7 +42,8 @@ def test_report(modelpath, folders, layers_dropped,
                                         oversampling=config.OVERSAMPLING,
                                         max_sequence_length=max_seq_length,
                                         zero_pad=zero_pad,
-                                        size=size)
+                                        forced_size=spec_size,
+                                        fuse=model.fuse)
 
     test_loader = DataLoader(test_set, batch_size=1,
                               num_workers=4, drop_last=True, shuffle=True)

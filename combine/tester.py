@@ -7,11 +7,12 @@ from bin.config import VARIABLES_FOLDER
 import feature_extraction
 
 
+def test(folders, modification, ofile=None):
 
-def test(folders, model, ofile=None):
+    model = modification['Classifier']
 
     print('Extracting features...')
-    X, y = feature_extraction.extraction(folders)
+    X, y = feature_extraction.extraction(folders, modification)
     print("Detailed classification report:")
     y_true, y_pred = y, model.predict(X)
     print(classification_report(y_true, y_pred))
@@ -39,7 +40,7 @@ if __name__ == '__main__':
 
     # Read arguments -- a list of folders
     parser = argparse.ArgumentParser()
-    parser.add_argument('-m', '--model', required=True,
+    parser.add_argument('-m', '--model_modification', required=True,
                         type=str, help='Model')
 
     parser.add_argument('-i', '--input', required=True,
@@ -50,7 +51,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # Get argument
-    model = args.model
+    model_modification = args.model_modification
     folders = args.input
     ofile = args.ofile
 
@@ -63,6 +64,6 @@ if __name__ == '__main__':
         if os.path.exists(f) is False:
             raise FileNotFoundError()
 
-    classifier = pickle.load(open(model, 'rb'))
+    modification = pickle.load(open(model_modification, 'rb'))
 
-    classification_report = test(folders, classifier, ofile)
+    classification_report = test(folders, modification, ofile)
