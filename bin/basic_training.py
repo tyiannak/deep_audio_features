@@ -131,6 +131,11 @@ def train_model(folders=None, ofile=None, zero_pad=config.ZERO_PAD, forced_size=
                                                  validation_epochs=5,
                                                  early_stopping=True)
     timestamp = time.ctime()
+
+    best_model_acc = valid_accuracy[valid_losses.index(min(valid_losses))]
+    print('All validation accuracies: {} \n'.format(valid_accuracy))
+    print('Best model validation accuracy: {}'.format(best_model_acc))
+
     if ofile is None:
         ofile = f"{best_model.__class__.__name__}_{_epochs}_{timestamp}.pt"
     else:
@@ -142,8 +147,6 @@ def train_model(folders=None, ofile=None, zero_pad=config.ZERO_PAD, forced_size=
     modelname = os.path.join(
         VARIABLES_FOLDER, ofile)
 
-    print(_epochs)
-    print(valid_accuracy)
 
     print(f"\nSaving model to: {modelname}\n")
     # Save model for later use
