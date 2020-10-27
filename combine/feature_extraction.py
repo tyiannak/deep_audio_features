@@ -10,9 +10,12 @@ from bin import config
 from pyAudioAnalysis import MidTermFeatures as aF
 from pyAudioAnalysis import audioBasicIO as aIO
 from utils.load_dataset import folders_mapping
+from PIL import Image
 
 
 def read_files(filenames):
+    """Read file using pyAudioAnalysis"""
+
     #Consider same sampling frequencies
     sequences = []
     for file in filenames:
@@ -24,7 +27,33 @@ def read_files(filenames):
     return sequences, fs
 
 
-def extract_segment_features(filenames, labels, basic_features_params):
+def extract_segment_features(filenames, basic_features_params):
+    """
+    Extract segment features using pyAudioAnalysis
+
+    Parameters
+    ----------
+
+    filenames :
+        List of input audio filenames
+
+    basic_features_params:
+        Dictionary of parameters to consider.
+        It must contain:
+            - mid_window: window size for framing
+            - mid_step: window step for framing
+            - short_window: segment window size
+            - short_step: segment window step
+
+    Returns
+    -------
+
+    segment_features_all:
+        List of stats on segment features
+    feature_names:
+        List of feature names
+
+    """
     segment_features_all = []
 
     sequences, sampling_rate = read_files(filenames)
@@ -47,7 +76,136 @@ def extract_segment_features(filenames, labels, basic_features_params):
     return segment_features_all, feature_names
 
 
+def resize_image(image, new_size, device):
+
+    im = Image.fromarray(image)
+    im_resized = im.resize(new_size)
+    im_resized = np.array(im_resized)
+
+    im_resized = im_resized[np.newaxis, :, :]
+    im_resized = torch.from_numpy(im_resized).type('torch.FloatTensor')
+    im_resized = im_resized.to(device)
+    im_resized = im_resized[:, np.newaxis, :, :]
+
+    return im_resized
+
+
+def extract_segment_nn_features(data, model, device, segment_step):
+    """
+     Extract features from audio using outputs of the next to last
+     layer of a pretrained CNN model. If the size of an image is
+     greater than the fixed size that a CNN demands, overlapping is
+     used. Else we resize the image.
+
+       Parameters
+       ----------
+
+       data:
+            List of features (spectrograms of images in the original size)
+            usually give from FeatureExtractorDataset.features
+
+       model:
+            Pretrained Pytorch's CNN model
+
+       device:
+            Device to run the model.
+
+       segment_step:
+            Step of the segment window.
+
+       Returns
+       -------
+        nn_features_stats:
+            Mean value of the segments' features
+
+        nn_segment_features:
+            Features for each segment
+    """
+
+    segment_size = model.spec_size
+    print('Model\'s segment size: {}'.format(segment_size))
+    nn_features_stats = []
+    nn_segment_features = []
+
+    for index, x in enumerate(data, 1):
+        current_position = 0
+        cnt = 0
+
+        spec_size = x.shape
+        seg_features = []
+        segments = []
+        if spec_size[0] < segment_size[0]:
+            segment = resize_image(x, segment_size, device)
+            segments.append(segment)
+            print(segment.shape)
+        else:
+            while current_position + segment_size[0] <= spec_size[0]:
+                cnt += 1
+                # get current window
+                segment = x[current_position:current_position + segment_size[0]]
+                segment = resize_image(segment, segment_size, device)
+                # update window position
+                current_position = current_position + segment_step
+                segments.append(segment)
+
+        for segment in segments:
+            out = model.forward(segment)
+            out = out.squeeze()
+            out = out.detach().clone().to('cpu').numpy()
+            out = out.flatten()
+            seg_features.append(out)
+        seg_features = np.asarray(seg_features)
+        nn_segment_features.append(seg_features)
+        mu = np.mean(seg_features, axis=0)
+        nn_features_stats.append(mu)
+    return nn_features_stats, nn_segment_features
+
+
 def extraction(folders, modification):
+    """
+    Extracts features from images. It can combine basic features
+    calculated by pyAudioAnalysis + extracted features using
+    pretrained CNN models.
+
+    Parameters
+    ----------
+
+    folders:
+        List of input folders. Each folder is a different class.
+
+    modification:
+        Dictionary that contains config parameters, such as:
+            extract_basic_features:
+                Boolean indicating whether extract pyAudioAnalysis features or not
+            basic_features_params:
+                Dictionary containing the following parameters for basic
+                feature extraction:
+                    - mid_window
+                    - mid_step
+                    - short_window
+                    - short_step
+            extract_nn_features:
+                Boolean indicating whether extract CNN features or not
+            model_paths:
+                List of paths for pretained CNN models to use for feature extraction
+            n_components:
+                Number of components to use for PCA on the CNN features, for each model
+            segment_step:
+                Step of the segment window, used fro overlapping (see
+                extract_segment_nn_features function)
+
+    Returns
+    -------
+
+        out_features:
+            Array of the final features.
+
+        labels:
+            Array of the labels
+
+        pcas:
+            List of pca models used for each CNN.
+    """
 
     n_components = modification['n_components']
     filenames = []
@@ -66,7 +224,7 @@ def extraction(folders, modification):
     if modification['extract_basic_features']:
         print('Basic features . . .')
         sequences_short_features, feature_names =\
-            extract_segment_features(filenames, labels,
+            extract_segment_features(filenames,
                                      modification['basic_features_params'])
 
         sequences_short_features_stats = []
@@ -86,7 +244,8 @@ def extraction(folders, modification):
         data = FeatureExtractorDataset(X=filenames, y=labels,
                                        fe_method=
                                        config.FEATURE_EXTRACTION_METHOD,
-                                       oversampling=config.OVERSAMPLING)
+                                       oversampling=config.OVERSAMPLING,
+                                       pure_features=True)
 
         models = []
         nn_features = []
@@ -104,40 +263,21 @@ def extraction(folders, modification):
             model.type = 'feature_extractor'
 
             models.append(model)
-            data.handle_lengths(model.zero_pad, model.spec_size)
 
-            data_loader = DataLoader(data, batch_size=1,
-                                     num_workers=4, drop_last=False, shuffle=False)
-            features = []
-            for index, batch in enumerate(data_loader, 1):
-                # Split each batch[index]
-                inputs, _, _ = batch
-
-                # Transfer to device
-                inputs = inputs.to(device)
-
-                # Forward through the network
-                # Add a new axis for CNN filter features, [z-axis]
-                inputs = inputs[:, np.newaxis, :, :]
-                out = model.forward(inputs)
-                out = out.squeeze()
-                out = out.detach().clone().to('cpu').numpy()
-                out = out.flatten()
-                features.append(out)
+            nn_features_stats, _ = extract_segment_nn_features(
+                        data.features.copy(), model, device, modification['segment_step'])
 
             if 'dim_reduction' in modification:
                 pca = pcas[j]
             else:
                 pca = PCA(n_components=n_components)
-                pcas.append(pca.fit(features))
+                pcas.append(pca.fit(nn_features_stats))
             print('    Applied dimensonality reduction to CNN features')
             print('        Expressed variance for the new '
                   'features: {}'.format(np.sum(pca.explained_variance_ratio_)))
-            principal_components = pca.transform(features)
+            principal_components = pca.transform(nn_features_stats)
             print(principal_components.shape)
             nn_features.append(principal_components)
-
-            #nn_features.append(features)
 
         nn_features = np.asarray(nn_features)
         print(nn_features.shape)
@@ -157,7 +297,7 @@ def extraction(folders, modification):
         out_features = sequences_short_features_stats
     out_features = np.asarray(out_features)
 
-    if 'dim_reduction' in modification:
-        return out_features, labels
-    else:
+    if modification['extract_nn_features'] and 'dim_reduction' not in modification:
         return out_features, labels, pcas
+    else:
+        return out_features, labels

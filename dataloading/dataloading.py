@@ -13,7 +13,7 @@ class FeatureExtractorDataset(Dataset):
 
     def __init__(self, X, y, fe_method="MFCC",
                  oversampling=False, max_sequence_length=281,
-                 zero_pad=False, forced_size=None, fuse=False):
+                 zero_pad=False, forced_size=None, pure_features=False, fuse=False):
         """Create all important variables for dataset tokenization
 
         Arguments:
@@ -23,6 +23,10 @@ class FeatureExtractorDataset(Dataset):
             fe_method {string} : The method that extracts the features.
             oversampling {bool} : Resampling technique to be applied.
             max_sequence_length {int} : Max sequence length of the set.
+            zero_pad {bool}: Apply zero padding (True) or resizing (False)
+            forced_size {bool}: Force specific size when resizing
+            pure_features {bool}: Keep pure features (neither zero padding nor resizing)
+            fuse {bool}: Fuse spectrogram with chromagram or not
         """
         self.fe_method = fe_method
         self.max_sequence_length = max_sequence_length
@@ -75,7 +79,8 @@ class FeatureExtractorDataset(Dataset):
         lengths = np.array([len(x) for x in X])
         self.lengths = torch.tensor(lengths)
 
-        self.handle_lengths(zero_pad)
+        if not pure_features:
+            self.handle_lengths(zero_pad)
 
     def __len__(self):
         """Returns length of FeatureExtractor dataset."""

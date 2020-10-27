@@ -1,4 +1,4 @@
-classifier:
+which_classifier:
   type: svm
   parameters: { 'kernel': 'rbf',
                 'metric': 'f1_macro'
@@ -12,6 +12,7 @@ basic_features_params:
   short_step: 0.01
 
 extract_nn_features: True
-model_paths: ['pkl/CNN1_20_Fri Oct 16 11:12:50 2020.pt']
+model_paths: ['pretrained_CNNs/CNN_movieSegments.pt']
 n_components: 100
+segment_step: 5
 
