@@ -55,7 +55,6 @@ def train(folders, ofile=None):
         X, y = feature_extraction.extraction(folders, modification)
     print('X: {}'.format(X.shape))
     print('y: {}'.format(y.shape))
-    print(Counter(y))
 
     clf = svm.SVC(kernel=kernel, class_weight='balanced')
     svm_parameters = {'gamma': ['auto', 1e-3, 1e-4, 1e-5, 1e-6],

@@ -137,7 +137,6 @@ def extract_segment_nn_features(data, model, device, segment_step):
         if spec_size[0] < segment_size[0]:
             segment = resize_image(x, segment_size, device)
             segments.append(segment)
-            print(segment.shape)
         else:
             while current_position + segment_size[0] <= spec_size[0]:
                 cnt += 1
@@ -256,10 +255,11 @@ def extraction(folders, modification):
 
         for j, model_path in enumerate(model_paths):
             print('Extracting features using model: {}'.format(model_path))
-            if device == 'cpu':
-                model = copy.deepcopy(torch.load(model_path, map_location=torch.device('cpu')))
-            else:
+            if torch.cuda.is_available():
                 model = copy.deepcopy(torch.load(model_path))
+            else:
+                model = copy.deepcopy(torch.load(model_path, map_location=torch.device('cpu')))
+
             model.type = 'feature_extractor'
 
             models.append(model)
