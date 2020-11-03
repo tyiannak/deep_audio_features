@@ -257,7 +257,7 @@ def extraction(folders, modification):
         for j, model_path in enumerate(model_paths):
             print('Extracting features using model: {}'.format(model_path))
             if device == 'cpu':
-                model = copy.deepcopy(torch.load(model_path, map_location='cpu'))
+                model = copy.deepcopy(torch.load(model_path, map_location=torch.device('cpu')))
             else:
                 model = copy.deepcopy(torch.load(model_path))
             model.type = 'feature_extractor'

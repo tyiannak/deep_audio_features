@@ -4,7 +4,7 @@ from bin.config import SPECTOGRAM_SIZE
 
 class CNN1(nn.Module):
     def __init__(self, height, width, output_dim=7, first_channels=32,
-                 kernel_size=5, zero_pad=False, spec_size=SPECTOGRAM_SIZE,
+                 kernel_size=5, stride=2, zero_pad=False, spec_size=SPECTOGRAM_SIZE,
                  fuse=False, type='classifier'):
         super(CNN1, self).__init__()
         self.zero_pad = zero_pad
@@ -16,6 +16,8 @@ class CNN1(nn.Module):
         self.height = height
         self.width = width
         self.first_channels = first_channels
+        self.kernel_size = kernel_size
+        self.stride = stride
 
         self.layer1 = nn.Sequential(
             nn.Conv2d(1, first_channels, kernel_size=kernel_size, stride=1,

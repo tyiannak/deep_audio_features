@@ -59,7 +59,7 @@ def train(folders, ofile=None):
 
     clf = svm.SVC(kernel=kernel, class_weight='balanced')
     svm_parameters = {'gamma': ['auto', 1e-3, 1e-4, 1e-5, 1e-6],
-                      'C': [1, 1e1, 1e2, 1e3, 1e4, 1e5]}
+                      'C': [1e-3, 1e-2, 1e-1, 1, 1e1, 1e2, 1e3]}
 
     print('The classifier is an SVM with {} kernel '.format(kernel))
     pipe = Pipeline(steps=[('SVM', clf)],
