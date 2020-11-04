@@ -70,6 +70,7 @@ Returns:
 
     return y_pred[0]
 
+
 if __name__ == '__main__':
 
     # Read arguments -- model

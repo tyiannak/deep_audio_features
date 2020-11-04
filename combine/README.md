@@ -49,3 +49,13 @@ Example command from the main directory:
 ```bash
 python3 combine/classification_report.py -m pkl/SVM_basic.pt -i 4class_balanced/music 4class_balanced/other 4class_balanced/silence 4class_balanced/speech
 ```
+
+## Predict
+
+Example command from the main directory:
+
+```bash
+python3 combine/predict.py -m pkl/SVM_basic_\&_UrbanSound8K.pt -i filename.wav
+```
+
+

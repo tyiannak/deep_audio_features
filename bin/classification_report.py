@@ -1,26 +1,12 @@
 import argparse
 import os
-import sys
-import time
-
-import torch
-from torch.utils.data import DataLoader
-import numpy as np
-
-import config
-from config import EPOCHS, CNN_BOOLEAN, VARIABLES_FOLDER
-from models.cnn import CNN1
-from lib.training import train_and_validate
 from utils import load_dataset
-from dataloading.dataloading import FeatureExtractorDataset
-import argparse
 import torch
 from torch.utils.data import DataLoader
 from dataloading.dataloading import FeatureExtractorDataset
 from lib.training import test
 from sklearn.metrics import classification_report
-from utils.model_editing import drop_layers
-from bin.basic_test import test_model
+import config
 
 
 def test_report(modelpath, folders, layers_dropped):

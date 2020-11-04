@@ -123,7 +123,7 @@ def extract_segment_nn_features(data, model, device, segment_step):
     """
 
     segment_size = model.spec_size
-    print('Model\'s segment size: {}'.format(segment_size))
+    print('--> Model\'s segment size: {}'.format(segment_size))
     nn_features_stats = []
     nn_segment_features = []
 
@@ -160,7 +160,7 @@ def extract_segment_nn_features(data, model, device, segment_step):
     return nn_features_stats, nn_segment_features
 
 
-def extraction(folders, modification):
+def extraction(input, modification, folders=True, show_hist=True):
     """
     Extracts features from images. It can combine basic features
     calculated by pyAudioAnalysis + extracted features using
@@ -206,22 +206,26 @@ def extraction(folders, modification):
             List of pca models used for each CNN.
     """
 
+    print('-----------------------------------------------------------------')
     n_components = modification['n_components']
     filenames = []
     labels = []
 
-    for folder in folders:
-        for f in glob.iglob(os.path.join(folder, '*.wav')):
-            filenames.append(f)
-            labels.append(folder)
+    if folders:
+        for folder in input:
+            for f in glob.iglob(os.path.join(folder, '*.wav')):
+                filenames.append(f)
+                labels.append(folder)
 
-    folder2idx, idx2folder = folders_mapping(folders=folders)
-    labels = list(map(lambda x: folder2idx[x], labels))
-    labels = np.asarray(labels)
+        folder2idx, idx2folder = folders_mapping(folders=input)
+        labels = list(map(lambda x: folder2idx[x], labels))
+        labels = np.asarray(labels)
 
+    else:
+        filenames = [input]
     # Match filenames with labels
     if modification['extract_basic_features']:
-        print('Basic features . . .')
+        print('--> Basic features . . .')
         sequences_short_features, feature_names =\
             extract_segment_features(filenames,
                                      modification['basic_features_params'])
@@ -244,7 +248,7 @@ def extraction(folders, modification):
                                        fe_method=
                                        config.FEATURE_EXTRACTION_METHOD,
                                        oversampling=config.OVERSAMPLING,
-                                       pure_features=True)
+                                       pure_features=True, show_hist=show_hist)
 
         models = []
         nn_features = []
@@ -254,7 +258,7 @@ def extraction(folders, modification):
             pcas = []
 
         for j, model_path in enumerate(model_paths):
-            print('Extracting features using model: {}'.format(model_path))
+            print('--> Extracting features using model: {}'.format(model_path))
             if torch.cuda.is_available():
                 model = copy.deepcopy(torch.load(model_path))
             else:
@@ -276,11 +280,10 @@ def extraction(folders, modification):
             print('        Expressed variance for the new '
                   'features: {}'.format(np.sum(pca.explained_variance_ratio_)))
             principal_components = pca.transform(nn_features_stats)
-            print(principal_components.shape)
             nn_features.append(principal_components)
 
         nn_features = np.asarray(nn_features)
-        print(nn_features.shape)
+        print('--> CNN features shape: {}'.format(nn_features.shape))
         if modification['extract_basic_features']:
             acc = sequences_short_features_stats
             acc = np.concatenate((acc, nn_features[0]), axis=1)
@@ -297,7 +300,10 @@ def extraction(folders, modification):
         out_features = sequences_short_features_stats
     out_features = np.asarray(out_features)
 
-    if modification['extract_nn_features'] and 'dim_reduction' not in modification:
+    print('-----------------------------------------------------------------')
+    if not folders:
+        return out_features
+    elif modification['extract_nn_features'] and 'dim_reduction' not in modification:
         return out_features, labels, pcas
     else:
         return out_features, labels

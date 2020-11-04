@@ -13,7 +13,8 @@ class FeatureExtractorDataset(Dataset):
 
     def __init__(self, X, y, fe_method="MFCC",
                  oversampling=False, max_sequence_length=281,
-                 zero_pad=False, forced_size=None, pure_features=False, fuse=False):
+                 zero_pad=False, forced_size=None, pure_features=False,
+                 fuse=False, show_hist=True):
         """Create all important variables for dataset tokenization
 
         Arguments:
@@ -32,7 +33,7 @@ class FeatureExtractorDataset(Dataset):
         self.max_sequence_length = max_sequence_length
         self.fuse = fuse
         if fuse:
-            print('Fusing spectrogram and chromagram')
+            print('--> Fusing spectrogram and chromagram')
 
         if oversampling is True:
             ros = RandomOverSampler()
@@ -45,7 +46,7 @@ class FeatureExtractorDataset(Dataset):
 
         features = []
         fss = []
-        print("Extracting spectrogram associated features. . .")
+        print("--> Extracting spectrogram associated features. . .")
         spec_sizes = []
         for audio_file in tqdm(X):  # for each audio file
             # load the signal
@@ -65,7 +66,8 @@ class FeatureExtractorDataset(Dataset):
 
         spec_sizes = np.asarray(spec_sizes)
 
-        self.plot_hist(spec_sizes, y)
+        if show_hist:
+            self.plot_hist(spec_sizes, y)
 
         if forced_size is None:
             size_0 = int(np.mean(spec_sizes))
@@ -109,10 +111,10 @@ class FeatureExtractorDataset(Dataset):
 
         if zero_pad:
             X = self.zero_pad_and_stack()
-            print('Using zero padding with max_length = {}'.format(self.max_sequence_length))
+            print('--> Using zero padding with max_length = {}'.format(self.max_sequence_length))
         else:
             X = self.resize(spec_size)
-            print('Using resizing with new_size = {}'.format(spec_size))
+            print('--> Using resizing with new_size = {}'.format(spec_size))
 
         X = np.asarray(X)
         self.X = torch.from_numpy(X).type('torch.FloatTensor')
@@ -182,6 +184,7 @@ class FeatureExtractorDataset(Dataset):
 
     def plot_hist(self, spec_sizes, labels):
 
+        print('--> Plotting histogram of spectrogram sizes. ')
         labels = np.asarray(labels)
         grouped_data = self.group_data_by_label(spec_sizes, labels)
         plt.style.use('ggplot')
@@ -193,7 +196,6 @@ class FeatureExtractorDataset(Dataset):
         axs[0].set_xlabel('Spectrogram time dimension')
         axs[0].set_ylabel('Frequency')
         axs[0].hist(spec_sizes, bins='auto')
-
 
         axs[1].title.set_text('For each class')
         axs[1].set_xlabel('Spectrogram time dimension')

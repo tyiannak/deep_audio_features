@@ -47,14 +47,14 @@ def train(folders, ofile=None):
         print('Supports only SVM classifier')
         return modification
 
-    print('Extracting features...')
+    print('\nExtracting features...')
     if modification['extract_nn_features'] and 'dim_reduction' not in modification:
         X, y, pcas = feature_extraction.extraction(folders, modification)
         modification['dim_reduction'] = pcas
     else:
         X, y = feature_extraction.extraction(folders, modification)
-    print('X: {}'.format(X.shape))
-    print('y: {}'.format(y.shape))
+    print('X (train data) shape: {}'.format(X.shape))
+    print('y (train labels) shape: {}'.format(y.shape))
 
     clf = svm.SVC(kernel=kernel, class_weight='balanced')
     svm_parameters = {'gamma': ['auto', 1e-3, 1e-4, 1e-5, 1e-6],
