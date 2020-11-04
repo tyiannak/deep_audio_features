@@ -5,7 +5,7 @@ import feature_extraction
 
 def predict(ifile, modification):
     """
-    Prints the predicted class for the input file.
+    Predicts and prints the predicted class for the input file.
 
     Parameters
     ----------

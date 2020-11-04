@@ -33,6 +33,8 @@ Modify the combine/config.yaml file. It contains the following parameters:
  
 ## Training 
 
+Trains a classifier using combined features (pyAudioAnalysis & CNN models' fetures) and GridSearchCV to find best parameters. Reads config.yaml to set running parameters.
+
 Example command from the main directory:
 
 
@@ -42,6 +44,7 @@ python3 combine/trainer.py -i 4class_balanced/music 4class_balanced/other 4class
 
 ## Classification Report
 
+Prints and stores classification report for the input data.
 
 Example command from the main directory:
 
@@ -51,6 +54,8 @@ python3 combine/classification_report.py -m pkl/SVM_basic.pt -i 4class_balanced/
 ```
 
 ## Predict
+
+Predicts and prints the predicted class for the input file.
 
 Example command from the main directory:
 
