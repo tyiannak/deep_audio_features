@@ -3,11 +3,7 @@ import sys
 import math
 from copy import deepcopy
 import numpy as np
-# Report metrics
-from sklearn.metrics import classification_report
-from sklearn.metrics import confusion_matrix
-from sklearn.metrics import f1_score, accuracy_score
-from inspect import getsource
+from sklearn.metrics import f1_score
 
 
 def train_and_validate(model,
@@ -18,12 +14,15 @@ def train_and_validate(model,
                        epochs,
                        cnn=False,
                        validation_epochs=5,
-                       early_stopping=False):
+                       early_stopping=False,
+                       patience=10):
     """
     Trains the given <model>.
     Then validates every <validation_epochs>.
     Returns: <best_model> containing the model with best parameters.
     """
+
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', verbose=True)
 
     # obtain the model's device ID
     device = next(model.parameters()).device
@@ -38,13 +37,17 @@ def train_and_validate(model,
     all_accuracy_validation = []
     all_train_loss = []
     all_valid_loss = []
+    all_valid_f1 = []
     best_model = None
     best_model_epoch = 0
-    min_loss = 0
+    min_loss = 1000
+    f1_max = 0
+    early_stop_counter = 0
 
     # Iterate for EPOCHS
     for epoch in range(1, EPOCHS + 1):
 
+        scheduler.step(epoch)
         # ===== Training HERE =====
         train_loss, train_acc = train(epoch, train_loader, model,
                                       loss_function, optimizer, cnn=cnn)
@@ -53,30 +56,34 @@ def train_and_validate(model,
         all_accuracy_training.append(train_acc)
 
         # ====== VALIDATION HERE ======
-        if epoch % VALIDATION_EPOCHS == 0:
-            valid_loss, valid_acc = validate(epoch, valid_loader,
-                                             model, loss_function, cnn=cnn)
 
-            # Find best model
-            if best_model is None:
-                # Initialize
-                # Store model but on cpu
-                best_model = deepcopy(model).to('cpu')
-                best_model_epoch = 5
-                # Save new minimum
-                min_loss = valid_loss
-            # New model with lower loss
-            elif valid_loss < min_loss:
-                # Update loss
-                min_loss = valid_loss
-                # Update best model, store on cpu
-                best_model = deepcopy(model).to('cpu')
-                best_model_epoch = epoch
+        valid_loss, valid_acc, valid_f1 = validate(epoch, valid_loader,
+                                         model, loss_function,
+                                         validation_epochs, cnn=cnn)
 
-            # Store statistics for later usage
-            all_valid_loss.append(valid_loss)
-            all_accuracy_validation.append(valid_acc)
+        # Find best model
+        if best_model is None:
+            # Initialize
+            # Store model but on cpu
+            best_model = deepcopy(model).to('cpu')
+            best_model_epoch = epoch
+            # Save new minimum
+            f1_max = valid_f1
+        # New model with lower loss
+        elif valid_f1 > f1_max + 1e-5:
+            # Update loss
+            f1_max = valid_f1
+            # Update best model, store on cpu
+            best_model = deepcopy(model).to('cpu')
+            best_model_epoch = epoch
+            early_stop_counter = 0
+        else:
+            early_stop_counter += 1
 
+        # Store statistics for later usage
+        all_valid_loss.append(valid_loss)
+        all_accuracy_validation.append(valid_acc)
+        all_valid_f1.append(valid_f1)
         # Make sure enough epochs have passed
         if epoch < 4 * VALIDATION_EPOCHS:
             continue
@@ -88,8 +95,7 @@ def train_and_validate(model,
         STOP = True
 
         # If validation loss is ascending two times in a row exit training
-        if (all_valid_loss[-1] >= all_valid_loss[-2]) and \
-                (all_valid_loss[-2] >= all_valid_loss[-3]):
+        if early_stop_counter > patience:
             print(f'\nIncreasing loss..')
             print(f'\nResetting model to epoch {best_model_epoch}.')
             # Remove unnessesary model
@@ -97,9 +103,11 @@ def train_and_validate(model,
             best_model = best_model.to(device)
             # Exit 2 loops at the same time, go to testing
             return best_model, all_train_loss, all_valid_loss, \
-                   all_accuracy_training, all_accuracy_validation, epoch
+                   all_accuracy_training, all_accuracy_validation,\
+                   all_valid_f1, epoch
 
         # Small change in loss
+        """
         if (abs(all_valid_loss[-1] - all_valid_loss[-2]) < 1e-3 and
                 abs(all_valid_loss[-2] - all_valid_loss[-3]) < 1e-3):
             print(f'\nVery small change in loss..')
@@ -110,13 +118,14 @@ def train_and_validate(model,
             # Exit 2 loops at the same time, go to testing
             return best_model, all_train_loss, all_valid_loss, \
                    all_accuracy_training, all_accuracy_validation, epoch
-
+        """
     print(f'\nTraining exited normally at epoch {epoch}.')
     # Remove unnessesary model
     model.to('cpu')
     best_model = best_model.to(device)
     return best_model, all_train_loss, all_valid_loss, \
-           all_accuracy_training, all_accuracy_validation, epoch
+           all_accuracy_training, all_accuracy_validation,\
+           all_valid_f1, epoch
 
 
 def train(_epoch, dataloader, model, loss_function, optimizer, cnn=False):
@@ -190,7 +199,8 @@ def train(_epoch, dataloader, model, loss_function, optimizer, cnn=False):
     return training_loss / len(dataloader.dataset), accuracy
 
 
-def validate(_epoch, dataloader, model, loss_function, cnn=False):
+def validate(_epoch, dataloader, model, loss_function,
+             validation_epochs, cnn=False):
     """Validate the model."""
 
     # Put model to evalutation mode
@@ -204,6 +214,8 @@ def validate(_epoch, dataloader, model, loss_function, cnn=False):
     with torch.no_grad():
         valid_loss = 0
 
+        pred_all = []
+        actual_labels = []
         for index, batch in enumerate(dataloader, 1):
 
             # Get the sample
@@ -222,26 +234,36 @@ def validate(_epoch, dataloader, model, loss_function, cnn=False):
                 inputs = inputs[:, np.newaxis, :, :]
                 y_pred = model.forward(inputs)
 
-            labels_cpu = labels.detach().clone().to('cpu').numpy()
-            # Get accuracy
-            correct += sum([int(a == b)
-                            for a, b in zip(labels_cpu,
-                                            np.argmax(y_pred.detach().clone().to('cpu').numpy(), axis=1))])
-
             # Compute loss
             loss = loss_function(y_pred, labels)
 
             # Add validation loss
             valid_loss += loss.data.item()
 
-        # Print some stats
-        print(
-            f'\nValidation loss at epoch {_epoch} : '
-            f'{round(valid_loss/len(dataloader.dataset), 4)}')
+            y_pred = np.argmax(y_pred.detach().clone().to('cpu').numpy(), axis=1)
+            pred_all.append(y_pred)
 
-        accuracy = correct / len(dataloader.dataset) * 100
+            labels_cpu = labels.detach().clone().to('cpu').numpy()
+            actual_labels.append(labels_cpu)
+            # Get accuracy
+            correct += sum([int(a == b)
+                            for a, b in zip(labels_cpu, y_pred)])
 
-    return valid_loss / len(dataloader.dataset), accuracy
+        accuracy = correct / len(dataloader.dataset)
+
+        labels = [item for sublist in actual_labels for item in sublist]
+        preds = [item for sublist in pred_all for item in sublist]
+        f1 = f1_score(labels, preds, average='macro')
+
+        if _epoch % validation_epochs == 0:
+            # Print some stats
+            print('\nValidation results for epoch {}:'.format(_epoch))
+            print('    --> loss: {}'.format(
+                round(valid_loss/len(dataloader.dataset), 4)))
+            print('    --> accuracy: {}'.format(round(accuracy, 4)))
+            print('    --> f1 score: {}'.format(round(f1, 4)))
+
+    return valid_loss / len(dataloader.dataset), accuracy, f1
 
 
 def test(model, dataloader, cnn=False, classifier=True):

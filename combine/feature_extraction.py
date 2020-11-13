@@ -3,8 +3,7 @@ import glob2 as glob
 import numpy as np
 import copy
 import torch
-from torch.utils.data import DataLoader
-from sklearn.decomposition import PCA
+from sklearn.decomposition import TruncatedSVD
 from dataloading.dataloading import FeatureExtractorDataset
 from bin import config
 from pyAudioAnalysis import MidTermFeatures as aF
@@ -90,10 +89,11 @@ def resize_image(image, new_size, device):
     return im_resized
 
 
-def extract_segment_nn_features(data, model, device, segment_step):
+def extract_segment_nn_features(data, model, device,
+                                segment_step, enough_memory=False):
     """
-     Extract features from audio using outputs of the next to last
-     layer of a pretrained CNN model. If the size of an image is
+     Extract features from audio using outputs of first convolutional
+     layer of a pretrained deep neural network. If the size of an image is
      greater than the fixed size that a CNN demands, overlapping is
      used. Else we resize the image.
 
@@ -113,13 +113,20 @@ def extract_segment_nn_features(data, model, device, segment_step):
        segment_step:
             Step of the segment window.
 
+        enough_memory:
+            Boolean indicating whether system memory is enough.
+            It enables the script to store features for evey segment.
+            The amount of memory needed differs for different datasets.
+            A good starting point is 8gb for medium datasets with small original
+            image sizes.
+
        Returns
        -------
         nn_features_stats:
             Mean value of the segments' features
 
         nn_segment_features:
-            Features for each segment
+            Features for each segment. Returned only if enough memory is True
     """
 
     segment_size = model.spec_size
@@ -133,10 +140,15 @@ def extract_segment_nn_features(data, model, device, segment_step):
 
         spec_size = x.shape
         seg_features = []
-        segments = []
         if spec_size[0] < segment_size[0]:
             segment = resize_image(x, segment_size, device)
-            segments.append(segment)
+
+            out = model.forward(segment)
+            out = out.squeeze()
+            out = out.type(torch.float32).detach().clone().to('cpu').numpy()
+            out = out.flatten()
+            seg_features.append(out)
+
         else:
             while current_position + segment_size[0] <= spec_size[0]:
                 cnt += 1
@@ -145,17 +157,17 @@ def extract_segment_nn_features(data, model, device, segment_step):
                 segment = resize_image(segment, segment_size, device)
                 # update window position
                 current_position = current_position + segment_step
-                segments.append(segment)
 
-        for segment in segments:
-            out = model.forward(segment)
-            out = out.squeeze()
-            out = out.detach().clone().to('cpu').numpy()
-            out = out.flatten()
-            seg_features.append(out)
-        seg_features = np.asarray(seg_features)
-        nn_segment_features.append(seg_features)
-        mu = np.mean(seg_features, axis=0)
+                out = model.forward(segment)
+                out = out.squeeze()
+                out = out.type(torch.float32).detach().clone().to('cpu').numpy()
+                out = out.flatten()
+                seg_features.append(out)
+
+        seg_features = np.array(seg_features, copy=False)
+        if enough_memory:
+            nn_segment_features.append(seg_features)
+        mu = np.mean(seg_features, axis=0, dtype=np.float32)
         nn_features_stats.append(mu)
     return nn_features_stats, nn_segment_features
 
@@ -262,20 +274,28 @@ def extraction(input, modification, folders=True, show_hist=True):
             if torch.cuda.is_available():
                 model = copy.deepcopy(torch.load(model_path))
             else:
-                model = copy.deepcopy(torch.load(model_path, map_location=torch.device('cpu')))
+                model = copy.deepcopy(torch.load(
+                    model_path,map_location=torch.device('cpu')))
 
             model.type = 'feature_extractor'
 
             models.append(model)
 
             nn_features_stats, _ = extract_segment_nn_features(
-                        data.features.copy(), model, device, modification['segment_step'])
+                        data.features.copy(), model,
+                device, modification['segment_step'])
 
             if 'dim_reduction' in modification:
                 pca = pcas[j]
             else:
-                pca = PCA(n_components=n_components)
-                pcas.append(pca.fit(nn_features_stats))
+                print('--> Finding {} principal components using'
+                      ' TruncatedSVD:'.format(n_components))
+                # Using TruncatedSVD instead of PCA for memory efficiency.
+                # However, PCA gives better results.
+                pca = TruncatedSVD(n_components=n_components,
+                                   algorithm='arpack')
+                pca.fit(nn_features_stats)
+                pcas.append(pca)
             print('    Applied dimensonality reduction to CNN features')
             print('        Expressed variance for the new '
                   'features: {}'.format(np.sum(pca.explained_variance_ratio_)))
@@ -303,7 +323,8 @@ def extraction(input, modification, folders=True, show_hist=True):
     print('-----------------------------------------------------------------')
     if not folders:
         return out_features
-    elif modification['extract_nn_features'] and 'dim_reduction' not in modification:
+    elif modification['extract_nn_features'] and \
+            'dim_reduction' not in modification:
         return out_features, labels, pcas
     else:
         return out_features, labels

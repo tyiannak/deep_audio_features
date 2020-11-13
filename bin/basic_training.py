@@ -117,11 +117,11 @@ def train_model(folders=None, ofile=None, zero_pad=config.ZERO_PAD, forced_size=
     ##################################
     loss_function = torch.nn.CrossEntropyLoss()
     optimizer = torch.optim.AdamW(params=model.parameters(),
-                                  lr=0.001,
+                                  lr=0.002,
                                   weight_decay=.02)
 
-    best_model, train_losses, valid_losses, train_accuracy, \
-    valid_accuracy, _epochs = train_and_validate(model=model,
+    best_model, train_losses, valid_losses, train_accuracy,\
+    valid_accuracy, valid_f1, _epochs = train_and_validate(model=model,
                                                  train_loader=train_loader,
                                                  valid_loader=valid_loader,
                                                  loss_function=loss_function,
@@ -131,10 +131,14 @@ def train_model(folders=None, ofile=None, zero_pad=config.ZERO_PAD, forced_size=
                                                  validation_epochs=5,
                                                  early_stopping=True)
     timestamp = time.ctime()
-
-    best_model_acc = valid_accuracy[valid_losses.index(min(valid_losses))]
     print('All validation accuracies: {} \n'.format(valid_accuracy))
-    print('Best model validation accuracy: {}'.format(best_model_acc))
+    best_index = valid_f1.index(max(valid_f1))
+    best_model_acc = valid_accuracy[best_index]
+    print('Best model\'s validation accuracy: {}'.format(best_model_acc))
+    best_model_f1 = valid_f1[best_index]
+    print('Best model\'s validation f1 score: {}'.format(best_model_f1))
+    best_model_loss = valid_losses[best_index]
+    print('Best model\'s validation loss: {}'.format(best_model_loss))
 
     if ofile is None:
         ofile = f"{best_model.__class__.__name__}_{_epochs}_{timestamp}.pt"

@@ -12,7 +12,7 @@
 
 - Validation accuracy:
 
-    93.49951124144673%
+    94.28%%
 
 
 ### CNN_movieSegments.pt
@@ -30,7 +30,7 @@
 
 - Validation accuracy:
 
-    79.27631578947368%
+    82.7302631578947%
 
 ### CNN_UrbanSound8K.pt
 
@@ -51,8 +51,5 @@
 
 - Validation accuracy:
 
-    92.50143102461362%
+    91.5283342873497%
 
-- Validation accuracy:
-
-    92.50143102461362%
