@@ -12,8 +12,15 @@ basic_features_params:
   short_step: 0.01
 
 extract_nn_features: True
-model_paths: ['pretrained_CNNs/CNN_UrbanSound8K.pt',
-              'pretrained_CNNs/CNN_4class_balanced.pt']
+model_paths: ['pretrained_CNNs/YOUR_MODEL_1',
+              'pretrained_CNNs/YOUR_MODEL_2',
+              'pretrained_CNNs/YOUR_MODEL_3',
+              '...']
+download_models: True
+google_drive_ids: ['GOOGLE_DRIVE_ID_OF_MODEL_1',
+                   'GOOGLE_DRIVE_ID_OF_MODEL_2',
+                   'GOOGLE_DRIVE_ID_OF_MODEL_3',
+                   '...']
 n_components: 100
 segment_step: 5
 

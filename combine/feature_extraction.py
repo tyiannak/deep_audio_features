@@ -9,6 +9,7 @@ from bin import config
 from pyAudioAnalysis import MidTermFeatures as aF
 from pyAudioAnalysis import audioBasicIO as aIO
 from utils.load_dataset import folders_mapping
+from utils import get_models
 from PIL import Image
 
 
@@ -199,6 +200,10 @@ def extraction(input, modification, folders=True, show_hist=True):
                 Boolean indicating whether extract CNN features or not
             model_paths:
                 List of paths for pretained CNN models to use for feature extraction
+            download_models (boolean):
+                if true the missing models will be downloaded
+            google_drive_ids (list of strings):
+                list containing the ids of the google drive files
             n_components:
                 Number of components to use for PCA on the CNN features, for each model
             segment_step:
@@ -236,6 +241,7 @@ def extraction(input, modification, folders=True, show_hist=True):
     else:
         filenames = [input]
     # Match filenames with labels
+
     if modification['extract_basic_features']:
         print('--> Basic features . . .')
         sequences_short_features, feature_names =\
@@ -250,7 +256,7 @@ def extraction(input, modification, folders=True, show_hist=True):
         sequences_short_features_stats = np.asarray(sequences_short_features_stats)
 
     if modification['extract_nn_features']:
-
+        get_models.download_missing(modification)
         model_paths = modification['model_paths']
 
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

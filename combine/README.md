@@ -1,4 +1,4 @@
-# Combine Features
+    # Combine Features
 
 Combine basic features calculated by pyAudioAnalysis + extracted features using pretrained CNN models.
 
@@ -25,6 +25,12 @@ Modify the combine/config.yaml file. It contains the following parameters:
 - model_paths:
     List of paths for pretained CNN models to use for feature extraction
 
+- download_models (boolean):
+    If true the missing models will be downloaded
+
+- google_drive_ids (list of strings):
+    List containing the ids of the google drive files
+            
 - n_components:
     Number of components to use for PCA on the CNN features, for each model
 
