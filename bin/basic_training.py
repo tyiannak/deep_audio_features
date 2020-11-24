@@ -26,9 +26,13 @@ from dataloading.dataloading import FeatureExtractorDataset
 # sys.path.insert(0, '/'.join(os.path.abspath(__file__).split(' /')[:-2]))
 
 
-def train_model(folders=None, ofile=None):
+def train_model(folders=None, ofile=None, zero_pad=config.ZERO_PAD, forced_size=None):
     """Train a given model on a given dataset"""
     # Check that folders exist
+    torch.manual_seed(0)
+    torch.cuda.manual_seed_all(0)
+    torch.backends.cudnn.deterministic = True
+
     if folders is None:
         raise FileNotFoundError()
 
@@ -45,18 +49,41 @@ def train_model(folders=None, ofile=None):
                                                       X=files_train+files_eval)
 
     # Load sets
-    train_set = FeatureExtractorDataset(X=files_train, y=y_train,
-                                        fe_method=
-                                        config.FEATURE_EXTRACTION_METHOD,
-                                        oversampling=config.OVERSAMPLING,
-                                        max_sequence_length=max_seq_length)
+    print('-------Creating train set-------')
+    if forced_size is None:
+        train_set = FeatureExtractorDataset(X=files_train, y=y_train,
+                                            fe_method=
+                                            config.FEATURE_EXTRACTION_METHOD,
+                                            oversampling=config.OVERSAMPLING,
+                                            max_sequence_length=max_seq_length,
+                                            zero_pad=zero_pad,
+                                            fuse=config.FUSED_SPECT)
 
+    else:
+        train_set = FeatureExtractorDataset(X=files_train, y=y_train,
+                                            fe_method=
+                                            config.FEATURE_EXTRACTION_METHOD,
+                                            oversampling=config.OVERSAMPLING,
+                                            max_sequence_length=max_seq_length,
+                                            zero_pad=zero_pad,
+                                            forced_size=forced_size,
+                                            fuse=config.FUSED_SPECT)
+
+    if forced_size is None:
+        spec_size = train_set.spec_size
+    else:
+        spec_size = forced_size
+    print('-------Creating validation set-------')
     eval_set = FeatureExtractorDataset(X=files_eval, y=y_eval,
                                        fe_method=
                                        config.FEATURE_EXTRACTION_METHOD,
                                        oversampling=config.OVERSAMPLING,
-                                       max_sequence_length=max_seq_length)
+                                       max_sequence_length=max_seq_length,
+                                       zero_pad=zero_pad,
+                                       forced_size=spec_size,
+                                       fuse=config.FUSED_SPECT)
 
+    print('-----------------------------------')
     # Add dataloader
     train_loader = DataLoader(train_set, batch_size=config.BATCH_SIZE,
                               num_workers=4, drop_last=True, shuffle=True)
@@ -68,11 +95,16 @@ def train_model(folders=None, ofile=None):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"DEVICE: {device}")
     # Create model and send to device
-    height = max_seq_length
-    width = train_set.X[0].shape[1]
-    model = CNN1(height=height, width=width, output_dim=len(classes))
+
+    if zero_pad:
+        height = max_seq_length
+        width = train_set.X[0].shape[1]
+    else:
+        height = spec_size[0]
+        width = spec_size[1]
+    model = CNN1(height=height, width=width, output_dim=len(classes),
+                 zero_pad=zero_pad, spec_size=spec_size, fuse=config.FUSED_SPECT)
     model.to(device)
-    print(model)
     # Add max_seq_length to model
     model.max_sequence_length = max_seq_length
 
@@ -85,11 +117,11 @@ def train_model(folders=None, ofile=None):
     ##################################
     loss_function = torch.nn.CrossEntropyLoss()
     optimizer = torch.optim.AdamW(params=model.parameters(),
-                                  lr=0.001,
+                                  lr=0.002,
                                   weight_decay=.02)
 
-    best_model, train_losses, valid_losses, train_accuracy, \
-    valid_accuracy, _epochs = train_and_validate(model=model,
+    best_model, train_losses, valid_losses, train_accuracy,\
+    valid_accuracy, valid_f1, _epochs = train_and_validate(model=model,
                                                  train_loader=train_loader,
                                                  valid_loader=valid_loader,
                                                  loss_function=loss_function,
@@ -99,6 +131,15 @@ def train_model(folders=None, ofile=None):
                                                  validation_epochs=5,
                                                  early_stopping=True)
     timestamp = time.ctime()
+    print('All validation accuracies: {} \n'.format(valid_accuracy))
+    best_index = valid_f1.index(max(valid_f1))
+    best_model_acc = valid_accuracy[best_index]
+    print('Best model\'s validation accuracy: {}'.format(best_model_acc))
+    best_model_f1 = valid_f1[best_index]
+    print('Best model\'s validation f1 score: {}'.format(best_model_f1))
+    best_model_loss = valid_losses[best_index]
+    print('Best model\'s validation loss: {}'.format(best_model_loss))
+
     if ofile is None:
         ofile = f"{best_model.__class__.__name__}_{_epochs}_{timestamp}.pt"
     else:
@@ -110,8 +151,6 @@ def train_model(folders=None, ofile=None):
     modelname = os.path.join(
         VARIABLES_FOLDER, ofile)
 
-    print(_epochs)
-    print(valid_accuracy)
 
     print(f"\nSaving model to: {modelname}\n")
     # Save model for later use
@@ -141,4 +180,7 @@ if __name__ == '__main__':
         if os.path.exists(f) is False:
             raise FileNotFoundError()
 
-    train_model(folders, ofile)
+    if config.FORCE_SIZE:
+        train_model(folders, ofile, forced_size=config.SPECTOGRAM_SIZE)
+    else:
+        train_model(folders, ofile)
