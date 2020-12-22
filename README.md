@@ -7,7 +7,7 @@
 ```bash
 git clone https://github.com/tyiannak/deep_audio_features
 cd deep_audio_features
-source scripts/setup_paths.py
+source scripts/setup_paths.sh
 ```
 
 
