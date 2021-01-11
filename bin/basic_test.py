@@ -50,7 +50,7 @@ Returns:
                                        oversampling=False,
                                        max_sequence_length=max_seq_length,
                                        zero_pad=zero_pad,
-                                       spec_size=spec_size,
+                                       forced_size=spec_size,
                                        fuse=fuse)
 
     # Create test dataloader
