@@ -120,7 +120,7 @@ def transfer_learning(model=None, folders=None, strategy=0,
                                   weight_decay=.02)
 
     best_model, train_losses, valid_losses, train_accuracy, \
-    valid_accuracy, _epochs = train_and_validate(model=model,
+    valid_accuracy, valid_f1, _epochs = train_and_validate(model=model,
                                                  train_loader=train_loader,
                                                  valid_loader=valid_loader,
                                                  loss_function=loss_function,
