@@ -205,6 +205,9 @@ class FeatureExtractorDataset(Dataset):
             axs[1].hist(group, alpha=0.5, bins='auto', label=label)
         axs[1].legend()
 
-        plt.show()
+        import datetime
+        ct = datetime.datetime.now()
+        plt.savefig(ct.strftime("%m_%d_%Y, %H:%M:%S") + ".png")
+
 
 
