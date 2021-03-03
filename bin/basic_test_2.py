@@ -6,6 +6,7 @@ from lib.training import test
 from utils.model_editing import drop_layers
 import config
 import os
+import glob
 
 
 def test_model(modelpath, ifile, layers_dropped, ** kwargs):
@@ -52,7 +53,8 @@ Returns:
                                        max_sequence_length=max_seq_length,
                                        zero_pad=zero_pad,
                                        forced_size=spec_size,
-                                       fuse=fuse)
+                                       fuse=fuse,
+                                       show_hist=False)
 
     # Create test dataloader
     test_loader = DataLoader(dataset=test_set, batch_size=1,
@@ -67,35 +69,39 @@ Returns:
     return out[0], y_pred[0]
 
 
-if __name__ == '__main__':
+def compile_deep_database(data_folder, models_folder, layers_dropped):
+    audio_files = glob.glob(os.path.join(data_folder, '*.wav'))
 
-    # Read arguments -- model
+    models = []
+    for file in os.listdir(models_folder):
+        if file.endswith(".pt"):
+            models.append(os.path.join(models_folder, file))
+
+    for a in audio_files:
+        for m in models:
+            soft, r = test_model(modelpath=m, ifile=a,
+                                 layers_dropped=layers_dropped)
+            print(soft)
+            feature_names = { f'{os.path.basename(m).replace(".pt", "")}_{i}':
+                                 soft[i] for i in range(len(soft))}
+            print(feature_names)
+
+
+    return
+
+
+if __name__ == '__main__':
+    # Read arguments
     parser = argparse.ArgumentParser()
     parser.add_argument('-m', '--model_dir', required=True,
                         type=str, help='Dir of models')
-
     parser.add_argument('-i', '--input', required=True,
                         type=str, help='Input file for testing')
-
     parser.add_argument('-L', '--layers', required=False, default=0,
                         help='Number of final layers to cut. Default is 0.')
     args = parser.parse_args()
-
-    # Get arguments
     model_dir = args.model_dir
     ifile = args.input
     layers_dropped = int(args.layers)
 
-    # Test the model
-    models = []
-    for file in os.listdir(model_dir):
-        if file.endswith(".pt"):
-            models.append(os.path.join(model_dir, file))
-
-    for m in models:
-        soft, r = test_model(modelpath=m, ifile=ifile,
-                             layers_dropped=layers_dropped)
-        print(soft)
-        feature_names = { f'{os.path.basename(m).replace(".pt", "")}_{i}':
-                              soft[i] for i in range(len(soft))}
-        print(feature_names)
+    compile_deep_database(ifile, model_dir, layers_dropped)
