@@ -7,7 +7,7 @@ from utils.model_editing import drop_layers
 import config
 import os
 import glob
-
+import numpy as np
 
 def test_model(modelpath, ifile, layers_dropped, ** kwargs):
     """Loads a model and predicts each classes probability
@@ -77,15 +77,26 @@ def compile_deep_database(data_folder, models_folder, layers_dropped):
         if file.endswith(".pt"):
             models.append(os.path.join(models_folder, file))
 
-    for a in audio_files:
+    all_features = []
+    for a in audio_files[::10]:
+        feature_names = []
+        features = np.array([])
         for m in models:
             soft, r = test_model(modelpath=m, ifile=a,
                                  layers_dropped=layers_dropped)
-            print(soft)
-            feature_names = { f'{os.path.basename(m).replace(".pt", "")}_{i}':
-                                 soft[i] for i in range(len(soft))}
-            print(feature_names)
+            features = np.concatenate([features, soft])
+            feature_names += [f'{os.path.basename(m).replace(".pt", "")}_{i}'
+                              for i in range(len(soft))]
+        print
+        all_features.append(features)
+#        for f, fn in zip(features, feature_names):
+#            print(f, fn)
+    all_features = np.array(all_features)
 
+    import pickle
+    with open('test.pkl', 'wb') as f:
+        pickle.dump(all_features, f)
+        pickle.dump(audio_files[::10], f)
 
     return
 
