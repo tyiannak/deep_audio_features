@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from utils import sound_processing
 from tqdm import tqdm
 from PIL import Image
+import datetime
 
 
 class FeatureExtractorDataset(Dataset):
@@ -26,7 +27,8 @@ class FeatureExtractorDataset(Dataset):
             max_sequence_length {int} : Max sequence length of the set.
             zero_pad {bool}: Apply zero padding (True) or resizing (False)
             forced_size {bool}: Force specific size when resizing
-            pure_features {bool}: Keep pure features (neither zero padding nor resizing)
+            pure_features {bool}: Keep pure features (neither zero
+            padding nor resizing)
             fuse {bool}: Fuse spectrogram with chromagram or not
         """
         self.fe_method = fe_method
@@ -53,9 +55,12 @@ class FeatureExtractorDataset(Dataset):
             signal, fs = sound_processing.load_wav(audio_file)
             # get the features:
             if fe_method == "MEL_SPECTROGRAM":
-                feature = sound_processing.get_melspectrogram(signal, fs=fs, fuse=fuse)
+                feature = sound_processing.get_melspectrogram(signal,
+                                                              fs=fs, fuse=fuse)
             else:
-                feature = sound_processing.get_mfcc_with_deltas(signal, fs=fs, fuse=fuse)
+                feature = sound_processing.get_mfcc_with_deltas(signal,
+                                                                fs=fs,
+                                                                fuse=fuse)
 
             spec_sizes.append(feature.shape[0])
 
@@ -204,8 +209,6 @@ class FeatureExtractorDataset(Dataset):
             label = 'Class {}'.format(idx)
             axs[1].hist(group, alpha=0.5, bins='auto', label=label)
         axs[1].legend()
-
-        import datetime
         ct = datetime.datetime.now()
         plt.savefig(ct.strftime("%m_%d_%Y, %H:%M:%S") + ".png")
 
