@@ -8,6 +8,8 @@ import config
 import os
 import glob
 import numpy as np
+import pickle
+
 
 def test_model(modelpath, ifile, layers_dropped, ** kwargs):
     """Loads a model and predicts each classes probability
@@ -69,36 +71,65 @@ Returns:
     return out[0], y_pred[0]
 
 
-def compile_deep_database(data_folder, models_folder, layers_dropped):
+def load_models(models_path):
+    models = []
+    for file in os.listdir(models_path):
+        if file.endswith(".pt"):
+            models.append(os.path.join(models_path, file))
+    return models
+
+
+def get_meta_features(audio_file, list_of_models):
+    # TODO add other layers
+    layers_dropped = 0
+
+    feature_names = []
+    features = np.array([])
+    for m in list_of_models:
+        soft, r = test_model(modelpath=m,
+                             ifile=audio_file,
+                             layers_dropped=layers_dropped)
+        features = np.concatenate([features, soft])
+        feature_names += [f'{os.path.basename(m).replace(".pt", "")}_{i}'
+                          for i in range(len(soft))]
+
+    return features, feature_names
+
+
+def compile_deep_database(data_folder, models_folder, db_path):
     audio_files = glob.glob(os.path.join(data_folder, '*.wav'))
 
-    models = []
-    for file in os.listdir(models_folder):
-        if file.endswith(".pt"):
-            models.append(os.path.join(models_folder, file))
+    models = load_models(models_folder)
 
     all_features = []
-    for a in audio_files[::10]:
-        feature_names = []
-        features = np.array([])
-        for m in models:
-            soft, r = test_model(modelpath=m, ifile=a,
-                                 layers_dropped=layers_dropped)
-            features = np.concatenate([features, soft])
-            feature_names += [f'{os.path.basename(m).replace(".pt", "")}_{i}'
-                              for i in range(len(soft))]
-        print
-        all_features.append(features)
-#        for f, fn in zip(features, feature_names):
-#            print(f, fn)
+    for a in audio_files:
+        f, f_names = get_meta_features(a, models)
+        all_features.append(f)
     all_features = np.array(all_features)
 
-    import pickle
-    with open('test.pkl', 'wb') as f:
+    with open(db_path, 'wb') as f:
         pickle.dump(all_features, f)
-        pickle.dump(audio_files[::10], f)
+        pickle.dump(f_names, f)
+        pickle.dump(audio_files, f)
 
     return
+
+
+def search_deep_database(database_path, models_folder, query_wav):
+    with open(database_path, 'rb') as f:
+        all_features = pickle.load(f)
+        f_names = pickle.load(f)
+        audio_files = pickle.load(f)
+
+    models = load_models(models_folder)
+    f, f_names = get_meta_features(query_wav, models)
+
+    import scipy.spatial.distance
+    print(f.reshape(-1,1).shape)
+    print(all_features.shape)
+    d = scipy.spatial.distance.cdist(f.reshape(-1,1).T, all_features)[0]
+    print([x for _, x in sorted(zip(d, audio_files))])
+    print(d)
 
 
 if __name__ == '__main__':
@@ -108,11 +139,10 @@ if __name__ == '__main__':
                         type=str, help='Dir of models')
     parser.add_argument('-i', '--input', required=True,
                         type=str, help='Input file for testing')
-    parser.add_argument('-L', '--layers', required=False, default=0,
-                        help='Number of final layers to cut. Default is 0.')
     args = parser.parse_args()
     model_dir = args.model_dir
     ifile = args.input
-    layers_dropped = int(args.layers)
 
-    compile_deep_database(ifile, model_dir, layers_dropped)
+    #compile_deep_database(ifile, model_dir, "db")
+    search_deep_database("db", model_dir,
+                         "/Users/tyiannak/Downloads/database/135- Dr. alban - Sing Hallelujah!.mp3.wav")
