@@ -111,25 +111,8 @@ def compile_deep_database(data_folder, models_folder, db_path):
         pickle.dump(all_features, f)
         pickle.dump(f_names, f)
         pickle.dump(audio_files, f)
-
+        pickle.dump(models_folder, f)
     return
-
-
-def search_deep_database(database_path, models_folder, query_wav):
-    with open(database_path, 'rb') as f:
-        all_features = pickle.load(f)
-        f_names = pickle.load(f)
-        audio_files = pickle.load(f)
-
-    models = load_models(models_folder)
-    f, f_names = get_meta_features(query_wav, models)
-
-    import scipy.spatial.distance
-    print(f.reshape(-1,1).shape)
-    print(all_features.shape)
-    d = scipy.spatial.distance.cdist(f.reshape(-1,1).T, all_features)[0]
-    print([x for _, x in sorted(zip(d, audio_files))])
-    print(d)
 
 
 if __name__ == '__main__':
@@ -143,6 +126,4 @@ if __name__ == '__main__':
     model_dir = args.model_dir
     ifile = args.input
 
-    #compile_deep_database(ifile, model_dir, "db")
-    search_deep_database("db", model_dir,
-                         "/Users/tyiannak/Downloads/database/135- Dr. alban - Sing Hallelujah!.mp3.wav")
+    compile_deep_database(ifile, model_dir, "db")
