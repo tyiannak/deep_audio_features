@@ -36,7 +36,6 @@ Returns:
     else:
         model = torch.load(modelpath)
 
-
     max_seq_length = model.max_sequence_length
 
     # Apply layer drop
@@ -71,8 +70,9 @@ Returns:
 
     # Forward a sample
     posteriors, y_pred, _ = test(model=model, dataloader=test_loader,
-                       cnn=True,
-                       classifier=True if layers_dropped == 0 else False)
+                                 cnn=True,
+                                 classifier=True if layers_dropped == 0
+                                 else False)
 
     if verbose:
         print("--> Unormalized posteriors:\n {}\n".format(posteriors))
@@ -107,6 +107,7 @@ if __name__ == '__main__':
 
     # Test the model
     if segmentation:
-        test_model(modelpath=model, ifile=ifile, layers_dropped=layers_dropped, test_segmentation=True)
+        test_model(modelpath=model, ifile=ifile, layers_dropped=layers_dropped,
+                   test_segmentation=True)
     else:
         test_model(modelpath=model, ifile=ifile, layers_dropped=layers_dropped)
