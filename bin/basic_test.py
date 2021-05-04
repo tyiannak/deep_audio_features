@@ -5,7 +5,7 @@ from dataloading.dataloading import FeatureExtractorDataset
 from lib.training import test
 from utils.model_editing import drop_layers
 import config
-
+import numpy
 
 def test_model(modelpath, ifile, layers_dropped,
                test_segmentation=False, verbose=True):
@@ -78,7 +78,7 @@ Returns:
         print("--> Unormalized posteriors:\n {}\n".format(posteriors))
         print("--> Predictions:\n {}".format(y_pred))
 
-    return y_pred, posteriors
+    return y_pred, numpy.array(posteriors)
 
 
 if __name__ == '__main__':
