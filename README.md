@@ -25,14 +25,14 @@ python3 bin/basic_training.py -i /path/to/folder1 /path/to/folder2
 
 ##### testing script
 
-```python
+```
 python3 bin/basic_test.py -m /path/to/model/ -i /path/to/file (-s)
 ```
 `-i` : select the folders  where the testing data will be loaded from.
 
 `-m` : select a model to apply testing.
 
-`-s`  : argmax function is applied to the softmax outputs.
+`-s`  : if included extracts segment level predictions of a sequence
 
 
 

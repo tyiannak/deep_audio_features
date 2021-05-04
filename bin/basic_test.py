@@ -7,7 +7,8 @@ from utils.model_editing import drop_layers
 import config
 
 
-def test_model(modelpath, ifile, layers_dropped, ** kwargs):
+def test_model(modelpath, ifile, layers_dropped,
+               test_segmentation=False, verbose=True):
     """Loads a model and predicts each classes probability
 
 Arguments:
@@ -16,16 +17,25 @@ Arguments:
 
         ifile {str} : A path of a given wav file,
                       which will be tested.
+        test_segmentation {bool}: If True extracts segment level
+                        predictions of a sequence
+        verbose {bool}: If True prints the predictions
 
 Returns:
 
         y_pred {np.array} : An array with the probability of each class
                             that the model predicts.
+        posteriors {np.array}: An array containing the unormalized
+                            posteriors of each class.
 
     """
-
+    device = "cuda" if torch.cuda.is_available() else "cpu"
     # Restore model
-    model = torch.load(modelpath)
+    if device == "cpu":
+        model = torch.load(modelpath, map_location=torch.device('cpu'))
+    else:
+        model = torch.load(modelpath)
+
     max_seq_length = model.max_sequence_length
 
     # Apply layer drop
@@ -36,10 +46,9 @@ Returns:
     spec_size = model.spec_size
     fuse = model.fuse
 
-    print('Model:\n{}'.format(model))
+    # print('Model:\n{}'.format(model))
 
     # Move to device
-    device = "cuda" if torch.cuda.is_available() else "cpu"
     model.to(device)
 
     # Create test set
@@ -51,7 +60,8 @@ Returns:
                                        max_sequence_length=max_seq_length,
                                        zero_pad=zero_pad,
                                        forced_size=spec_size,
-                                       fuse=fuse)
+                                       fuse=fuse, show_hist=False,
+                                       test_segmentation=test_segmentation)
 
     # Create test dataloader
     test_loader = DataLoader(dataset=test_set, batch_size=1,
@@ -59,16 +69,16 @@ Returns:
                              shuffle=False)
 
     # Forward a sample
-    out, y_pred, _ = test(model=model, dataloader=test_loader,
-                       cnn=True,
-                       classifier=True if layers_dropped == 0 else False)
+    posteriors, y_pred, _ = test(model=model, dataloader=test_loader,
+                                 cnn=True,
+                                 classifier=True if layers_dropped == 0
+                                 else False)
 
-    # [0] only for 1 sample to remove [[value]]
-    print(out[0])
-    #  If model has all layers can correctly predict a class
-    print(y_pred)
+    if verbose:
+        print("--> Unormalized posteriors:\n {}\n".format(posteriors))
+        print("--> Predictions:\n {}".format(y_pred))
 
-    return y_pred[0]
+    return y_pred, posteriors
 
 
 if __name__ == '__main__':
@@ -81,6 +91,10 @@ if __name__ == '__main__':
     parser.add_argument('-i', '--input', required=True,
                         type=str, help='Input file for testing')
 
+    parser.add_argument('-s', '--segmentation', required=False,
+                        action='store_true',
+                        help='Return segment predictions')
+
     parser.add_argument('-L', '--layers', required=False, default=0,
                         help='Number of final layers to cut. Default is 0.')
     args = parser.parse_args()
@@ -89,6 +103,11 @@ if __name__ == '__main__':
     model = args.model
     ifile = args.input
     layers_dropped = int(args.layers)
+    segmentation = args.segmentation
 
     # Test the model
-    test_model(modelpath=model, ifile=ifile, layers_dropped=layers_dropped)
+    if segmentation:
+        test_model(modelpath=model, ifile=ifile, layers_dropped=layers_dropped,
+                   test_segmentation=True)
+    else:
+        test_model(modelpath=model, ifile=ifile, layers_dropped=layers_dropped)

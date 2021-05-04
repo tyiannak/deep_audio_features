@@ -285,17 +285,19 @@ def test(model, dataloader, cnn=False, classifier=True):
 
 ### Returns:
 
-        out {np.array} : A np.array containing features/output values
+        posteriors {np.array} : An np.array containing output values
                             of the final layer of a model.
 
         y_pred {np.array} : If `classifier` is `True` returns the class
                              prediction else `False`.
+        y_true {np.array} : Actual labels
     """
     # obtain the model's device ID
     device = next(model.parameters()).device
 
     correct = 0
     # Create empty array for storing predictions and labels
+    posteriors = []
     y_pred = []
     y_true = []
     for index, batch in enumerate(dataloader, 1):
@@ -323,15 +325,12 @@ def test(model, dataloader, cnn=False, classifier=True):
         # Save predictions
         y_pred.append(predictions.cpu().data.numpy())
         y_true.append(labels.cpu().data.numpy())
-
+        posteriors.append(out[0].cpu().detach().numpy())
     # Get metrics
     y_pred = np.array(y_pred).flatten()
     y_true = np.array(y_true).flatten()
 
-    # Detach out
-    out = out.cpu().detach().numpy()
-
-    return out, y_pred, y_true
+    return posteriors, y_pred, y_true
 
 
 def progress(loss, epoch, batch, batch_size, dataset_size):
