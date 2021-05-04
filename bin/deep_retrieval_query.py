@@ -28,7 +28,7 @@ def search_deep_database(database_path, query_wav):
     print(all_features.shape)
     d = scipy.spatial.distance.cdist(f.reshape(-1,1).T, all_features)[0]
     print([x for _, x in sorted(zip(d, audio_files))])
-    print(d)
+    print(sorted(d))
 
 
 if __name__ == '__main__':
