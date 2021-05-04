@@ -7,7 +7,7 @@ from utils.model_editing import drop_layers
 import config
 
 
-def test_model(modelpath, ifile, layers_dropped, ** kwargs):
+def test_model(modelpath, ifile, layers_dropped, test_segmentation=False):
     """Loads a model and predicts each classes probability
 
 Arguments:
@@ -36,7 +36,7 @@ Returns:
     spec_size = model.spec_size
     fuse = model.fuse
 
-    print('Model:\n{}'.format(model))
+    # print('Model:\n{}'.format(model))
 
     # Move to device
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -51,7 +51,8 @@ Returns:
                                        max_sequence_length=max_seq_length,
                                        zero_pad=zero_pad,
                                        forced_size=spec_size,
-                                       fuse=fuse)
+                                       fuse=fuse, show_hist=False,
+                                       test_segmentation=test_segmentation)
 
     # Create test dataloader
     test_loader = DataLoader(dataset=test_set, batch_size=1,
@@ -64,9 +65,9 @@ Returns:
                        classifier=True if layers_dropped == 0 else False)
 
     # [0] only for 1 sample to remove [[value]]
-    print(out[0])
+    print("Unormalized posteriors: {}".format(out))
     #  If model has all layers can correctly predict a class
-    print(y_pred)
+    print("Predictions: {}".format(y_pred))
 
     return y_pred[0]
 
@@ -91,4 +92,4 @@ if __name__ == '__main__':
     layers_dropped = int(args.layers)
 
     # Test the model
-    test_model(modelpath=model, ifile=ifile, layers_dropped=layers_dropped)
+    test_model(modelpath=model, ifile=ifile, layers_dropped=layers_dropped, test_segmentation=True)

@@ -15,7 +15,7 @@ class FeatureExtractorDataset(Dataset):
     def __init__(self, X, y, fe_method="MFCC",
                  oversampling=False, max_sequence_length=281,
                  zero_pad=False, forced_size=None, pure_features=False,
-                 fuse=False, show_hist=True):
+                 fuse=False, show_hist=True, test_segmentation=False):
         """Create all important variables for dataset tokenization
 
         Arguments:
@@ -71,20 +71,45 @@ class FeatureExtractorDataset(Dataset):
 
         spec_sizes = np.asarray(spec_sizes)
 
-        if show_hist:
-            self.plot_hist(spec_sizes, y)
+        if test_segmentation:
+            # NOTE: Applied only to 1 file input
+            print("--> Applying segmentation to the input file. . .")
+            sequence = features[0]
+            sequence_length = spec_sizes[0]
+            segment_length = forced_size[0]
+            progress = 0
+            segments = []
+            while progress < sequence_length:
+                if progress + segment_length > sequence_length:
+                    segments.append(sequence[progress:-1])
+                else:
+                    segments.append(sequence[progress: progress + segment_length + 1])
 
-        if forced_size is None:
-            size_0 = int(np.mean(spec_sizes))
-            size_1 = 140 if fuse else 128
-            self.spec_size = (size_0, size_1)
-        else:
+                progress = progress + segment_length
+
+            print(len(segments))
+            self.features = segments
             self.spec_size = forced_size
-        # Create tensor for labels
-        self.y = torch.tensor(y, dtype=int)
-        # Get all lengths before zero padding
-        lengths = np.array([len(x) for x in X])
-        self.lengths = torch.tensor(lengths)
+
+            self.y = torch.tensor(np.zeros(len(segments)), dtype=int)
+            lengths = np.array([len(x) for x in segments])
+            self.lengths = torch.tensor(lengths)
+
+        else:
+            if show_hist:
+                self.plot_hist(spec_sizes, y)
+
+            if forced_size is None:
+                size_0 = int(np.mean(spec_sizes))
+                size_1 = 140 if fuse else 128
+                self.spec_size = (size_0, size_1)
+            else:
+                self.spec_size = forced_size
+            # Create tensor for labels
+            self.y = torch.tensor(y, dtype=int)
+            # Get all lengths before zero padding
+            lengths = np.array([len(x) for x in X])
+            self.lengths = torch.tensor(lengths)
 
         if not pure_features:
             self.handle_lengths(zero_pad)

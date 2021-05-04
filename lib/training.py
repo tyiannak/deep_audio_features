@@ -296,6 +296,7 @@ def test(model, dataloader, cnn=False, classifier=True):
 
     correct = 0
     # Create empty array for storing predictions and labels
+    posteriors = []
     y_pred = []
     y_true = []
     for index, batch in enumerate(dataloader, 1):
@@ -323,15 +324,12 @@ def test(model, dataloader, cnn=False, classifier=True):
         # Save predictions
         y_pred.append(predictions.cpu().data.numpy())
         y_true.append(labels.cpu().data.numpy())
-
+        posteriors.append(out.cpu().detach().numpy())
     # Get metrics
     y_pred = np.array(y_pred).flatten()
     y_true = np.array(y_true).flatten()
 
-    # Detach out
-    out = out.cpu().detach().numpy()
-
-    return out, y_pred, y_true
+    return posteriors, y_pred, y_true
 
 
 def progress(loss, epoch, batch, batch_size, dataset_size):
