@@ -7,7 +7,7 @@ from utils.model_editing import drop_layers
 import config
 
 
-def test_model(modelpath, ifile, layers_dropped, test_segmentation=False):
+def test_model(modelpath, ifile, layers_dropped, test_segmentation=False, verbose=True):
     """Loads a model and predicts each classes probability
 
 Arguments:
@@ -60,16 +60,15 @@ Returns:
                              shuffle=False)
 
     # Forward a sample
-    out, y_pred, _ = test(model=model, dataloader=test_loader,
+    posteriors, y_pred, _ = test(model=model, dataloader=test_loader,
                        cnn=True,
                        classifier=True if layers_dropped == 0 else False)
 
-    # [0] only for 1 sample to remove [[value]]
-    print("Unormalized posteriors: {}".format(out))
-    #  If model has all layers can correctly predict a class
-    print("Predictions: {}".format(y_pred))
+    if verbose:
+        print("--> Unormalized posteriors:\n {}\n".format(posteriors))
+        print("--> Predictions:\n {}".format(y_pred))
 
-    return y_pred[0]
+    return y_pred, posteriors
 
 
 if __name__ == '__main__':
@@ -82,6 +81,10 @@ if __name__ == '__main__':
     parser.add_argument('-i', '--input', required=True,
                         type=str, help='Input file for testing')
 
+    parser.add_argument('-s', '--segmentation', required=False,
+                        action='store_true',
+                        help='Return segment predictions')
+
     parser.add_argument('-L', '--layers', required=False, default=0,
                         help='Number of final layers to cut. Default is 0.')
     args = parser.parse_args()
@@ -90,6 +93,10 @@ if __name__ == '__main__':
     model = args.model
     ifile = args.input
     layers_dropped = int(args.layers)
+    segmentation = args.segmentation
 
     # Test the model
-    test_model(modelpath=model, ifile=ifile, layers_dropped=layers_dropped, test_segmentation=True)
+    if segmentation:
+        test_model(modelpath=model, ifile=ifile, layers_dropped=layers_dropped, test_segmentation=True)
+    else:
+        test_model(modelpath=model, ifile=ifile, layers_dropped=layers_dropped)
