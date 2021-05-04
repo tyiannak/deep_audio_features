@@ -30,10 +30,10 @@ Returns:
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     # Restore model
-    if device == "cuda":
-        model = torch.load(modelpath)
-    else:
+    if device == "cpu":
         model = torch.load(modelpath, map_location=torch.device('cpu'))
+    else:
+        model = torch.load(modelpath)
     max_seq_length = model.max_sequence_length
 
     # Apply layer drop
