@@ -30,6 +30,11 @@ class FeatureExtractorDataset(Dataset):
             pure_features {bool}: Keep pure features (neither zero
             padding nor resizing)
             fuse {bool}: Fuse spectrogram with chromagram or not
+            show_hist {bool}: Whether to store a histogram of the files'
+                sequence length
+            test_segmentation {bool}: Whether to extract segment predictions
+                of a large sequence. Applied only for 1-file testing for the
+                time being.
         """
         self.fe_method = fe_method
         self.max_sequence_length = max_sequence_length

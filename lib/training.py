@@ -285,11 +285,12 @@ def test(model, dataloader, cnn=False, classifier=True):
 
 ### Returns:
 
-        out {np.array} : A np.array containing features/output values
+        posteriors {np.array} : An np.array containing output values
                             of the final layer of a model.
 
         y_pred {np.array} : If `classifier` is `True` returns the class
                              prediction else `False`.
+        y_true {np.array} : Actual labels
     """
     # obtain the model's device ID
     device = next(model.parameters()).device

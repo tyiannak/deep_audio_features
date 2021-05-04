@@ -7,7 +7,8 @@ from utils.model_editing import drop_layers
 import config
 
 
-def test_model(modelpath, ifile, layers_dropped, test_segmentation=False, verbose=True):
+def test_model(modelpath, ifile, layers_dropped,
+               test_segmentation=False, verbose=True):
     """Loads a model and predicts each classes probability
 
 Arguments:
@@ -16,11 +17,16 @@ Arguments:
 
         ifile {str} : A path of a given wav file,
                       which will be tested.
+        test_segmentation {bool}: If True extracts segment level
+                        predictions of a sequence
+        verbose {bool}: If True prints the predictions
 
 Returns:
 
         y_pred {np.array} : An array with the probability of each class
                             that the model predicts.
+        posteriors {np.array}: An array containing the unormalized
+                            posteriors of each class.
 
     """
 
