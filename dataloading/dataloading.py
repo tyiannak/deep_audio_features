@@ -199,10 +199,11 @@ class FeatureExtractorDataset(Dataset):
         X = self.features.copy()
         X_resized = []
         for x in X:
-            spec = Image.fromarray(x)
-            spec = spec.resize(spec_size)
-            spec = np.array(spec)
-            X_resized.append(spec)
+            if x.shape[0] >0 :
+                spec = Image.fromarray(x)
+                spec = spec.resize(spec_size)
+                spec = np.array(spec)
+                X_resized.append(spec)
         return X_resized
 
     @staticmethod
