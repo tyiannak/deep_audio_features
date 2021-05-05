@@ -57,9 +57,8 @@ def compile_deep_database(data_folder, models_folder, db_path):
     for a in audio_files:
         f, f_temporal, f_names = get_meta_features(a, models)
         all_features.append(f)
-        all_features_temporal.append(f_temporal)
+        all_features_temporal.append(np.concatenate(f_temporal, axis=1).transpose())
     all_features = np.array(all_features)
-    all_features_temporal = np.array(all_features_temporal)
 
     with open(db_path, 'wb') as f:
         pickle.dump(all_features, f)

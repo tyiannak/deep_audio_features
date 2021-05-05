@@ -9,7 +9,7 @@ import os
 import glob
 import numpy as np
 import pickle
-
+import scipy.spatial.distance
 import deep_retrieval_build_db
 
 
@@ -22,11 +22,8 @@ def search_deep_database(database_path, query_wav):
         models_folder = pickle.load(f)
 
     models = deep_retrieval_build_db.load_models(models_folder)
-    f, f_names = deep_retrieval_build_db.get_meta_features(query_wav, models)
-
-    import scipy.spatial.distance
-    print(f.reshape(-1,1).shape)
-    print(all_features.shape)
+    f, f_temp, f_names = deep_retrieval_build_db.get_meta_features(query_wav, models)
+    print(all_features_temporal[0])
     d = scipy.spatial.distance.cdist(f.reshape(-1, 1).T, all_features)[0]
     print([x for _, x in sorted(zip(d, audio_files))])
     print(sorted(d))
