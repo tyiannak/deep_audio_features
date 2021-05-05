@@ -107,7 +107,11 @@ if __name__ == '__main__':
 
     # Test the model
     if segmentation:
-        test_model(modelpath=model, ifile=ifile, layers_dropped=layers_dropped,
-                   test_segmentation=True)
+        d, p = test_model(modelpath=model, ifile=ifile,
+                          layers_dropped=layers_dropped,
+                          test_segmentation=True)
     else:
-        test_model(modelpath=model, ifile=ifile, layers_dropped=layers_dropped)
+        d, p = test_model(modelpath=model, ifile=ifile,
+                          layers_dropped=layers_dropped)
+
+    #print(numpy.mean(p[:, 3]))
