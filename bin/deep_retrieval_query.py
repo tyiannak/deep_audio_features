@@ -16,6 +16,7 @@ import deep_retrieval_build_db
 def search_deep_database(database_path, query_wav):
     with open(database_path, 'rb') as f:
         all_features = pickle.load(f)
+        all_features_temporal = pickle.load(f)
         f_names = pickle.load(f)
         audio_files = pickle.load(f)
         models_folder = pickle.load(f)
@@ -26,7 +27,7 @@ def search_deep_database(database_path, query_wav):
     import scipy.spatial.distance
     print(f.reshape(-1,1).shape)
     print(all_features.shape)
-    d = scipy.spatial.distance.cdist(f.reshape(-1,1).T, all_features)[0]
+    d = scipy.spatial.distance.cdist(f.reshape(-1, 1).T, all_features)[0]
     print([x for _, x in sorted(zip(d, audio_files))])
     print(sorted(d))
 

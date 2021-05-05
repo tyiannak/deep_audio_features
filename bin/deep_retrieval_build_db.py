@@ -25,6 +25,7 @@ def get_meta_features(audio_file, list_of_models):
     layers_dropped = 0
 
     feature_names = []
+    features_temporal = []
     features = np.array([])
     for m in list_of_models:
         r, soft = test_model(modelpath=m,
@@ -35,13 +36,15 @@ def get_meta_features(audio_file, list_of_models):
         # long-term average the posteriors
         # (along different CNN segment-decisions)
         soft_average = np.mean(soft, axis=0)
-        soft = soft_average
 
-        features = np.concatenate([features, soft])
+        features = np.concatenate([features, soft_average])
         feature_names += [f'{os.path.basename(m).replace(".pt", "")}_{i}'
-                          for i in range(len(soft))]
+                          for i in range(len(soft_average))]
 
-    return features, feature_names
+        # keep whole temporal posterior sequences as well
+        features_temporal.append(soft)
+
+    return features, features_temporal, feature_names
 
 
 def compile_deep_database(data_folder, models_folder, db_path):
@@ -50,13 +53,17 @@ def compile_deep_database(data_folder, models_folder, db_path):
     models = load_models(models_folder)
 
     all_features = []
+    all_features_temporal = []
     for a in audio_files:
-        f, f_names = get_meta_features(a, models)
+        f, f_temporal, f_names = get_meta_features(a, models)
         all_features.append(f)
+        all_features_temporal.append(f_temporal)
     all_features = np.array(all_features)
+    all_features_temporal = np.array(all_features_temporal)
 
     with open(db_path, 'wb') as f:
         pickle.dump(all_features, f)
+        pickle.dump(all_features_temporal, f)
         pickle.dump(f_names, f)
         pickle.dump(audio_files, f)
         pickle.dump(models_folder, f)
