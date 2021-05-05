@@ -197,13 +197,14 @@ class FeatureExtractorDataset(Dataset):
             spec_size = self.spec_size
 
         X = self.features.copy()
-        X_resized = []
+        x_resized = []
         for x in X:
-            spec = Image.fromarray(x)
-            spec = spec.resize(spec_size)
-            spec = np.array(spec)
-            X_resized.append(spec)
-        return X_resized
+            if x.shape[0] > 0:
+                spec = Image.fromarray(x)
+                spec = spec.resize(spec_size)
+                spec = np.array(spec)
+                x_resized.append(spec)
+        return x_resized
 
     @staticmethod
     def group_data_by_label(spec_sizes, labels):

@@ -4,74 +4,12 @@ from torch.utils.data import DataLoader
 from dataloading.dataloading import FeatureExtractorDataset
 from lib.training import test
 from utils.model_editing import drop_layers
+from basic_test import test_model
 import config
 import os
 import glob
 import numpy as np
 import pickle
-
-
-def test_model(modelpath, ifile, layers_dropped, ** kwargs):
-    """Loads a model and predicts each classes probability
-
-Arguments:
-
-        modelpath {str} : A path where the model was stored.
-
-        ifile {str} : A path of a given wav file,
-                      which will be tested.
-
-Returns:
-
-        y_pred {np.array} : An array with the probability of each class
-                            that the model predicts.
-
-    """
-
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    # Restore model
-    if device == "cpu":
-        model = torch.load(modelpath, map_location=torch.device('cpu'))
-    else:
-        model = torch.load(modelpath)
-    max_seq_length = model.max_sequence_length
-
-    # Apply layer drop
-    model = drop_layers(model, layers_dropped)
-    model.max_sequence_length = max_seq_length
-
-    zero_pad = model.zero_pad
-    spec_size = model.spec_size
-    fuse = model.fuse
-
-#    print('Model:\n{}'.format(model))
-
-    # Move to device
-    model.to(device)
-
-    # Create test set
-    test_set = FeatureExtractorDataset(X=[ifile],
-                                       # Random class -- does not matter at all
-                                       y=[0],
-                                       fe_method="MEL_SPECTROGRAM",
-                                       oversampling=False,
-                                       max_sequence_length=max_seq_length,
-                                       zero_pad=zero_pad,
-                                       forced_size=spec_size,
-                                       fuse=fuse,
-                                       show_hist=False)
-
-    # Create test dataloader
-    test_loader = DataLoader(dataset=test_set, batch_size=1,
-                             num_workers=4, drop_last=False,
-                             shuffle=False)
-
-    # Forward a sample
-    out, y_pred, _ = test(model=model, dataloader=test_loader,
-                       cnn=True,
-                       classifier=True if layers_dropped == 0 else False)
-
-    return out[0], y_pred[0]
 
 
 def load_models(models_path):
@@ -87,16 +25,26 @@ def get_meta_features(audio_file, list_of_models):
     layers_dropped = 0
 
     feature_names = []
+    features_temporal = []
     features = np.array([])
     for m in list_of_models:
-        soft, r = test_model(modelpath=m,
+        r, soft = test_model(modelpath=m,
                              ifile=audio_file,
-                             layers_dropped=layers_dropped)
-        features = np.concatenate([features, soft])
-        feature_names += [f'{os.path.basename(m).replace(".pt", "")}_{i}'
-                          for i in range(len(soft))]
+                             layers_dropped=layers_dropped,
+                             test_segmentation=True,
+                             verbose=True)
+        # long-term average the posteriors
+        # (along different CNN segment-decisions)
+        soft_average = np.mean(soft, axis=0)
 
-    return features, feature_names
+        features = np.concatenate([features, soft_average])
+        feature_names += [f'{os.path.basename(m).replace(".pt", "")}_{i}'
+                          for i in range(len(soft_average))]
+
+        # keep whole temporal posterior sequences as well
+        features_temporal.append(soft)
+
+    return features, features_temporal, feature_names
 
 
 def compile_deep_database(data_folder, models_folder, db_path):
@@ -105,13 +53,16 @@ def compile_deep_database(data_folder, models_folder, db_path):
     models = load_models(models_folder)
 
     all_features = []
+    all_features_temporal = []
     for a in audio_files:
-        f, f_names = get_meta_features(a, models)
+        f, f_temporal, f_names = get_meta_features(a, models)
         all_features.append(f)
+        all_features_temporal.append(np.concatenate(f_temporal, axis=1).transpose())
     all_features = np.array(all_features)
 
     with open(db_path, 'wb') as f:
         pickle.dump(all_features, f)
+        pickle.dump(all_features_temporal, f)
         pickle.dump(f_names, f)
         pickle.dump(audio_files, f)
         pickle.dump(models_folder, f)
