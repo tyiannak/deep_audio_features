@@ -318,17 +318,20 @@ def test(model, dataloader, cnn=False, classifier=True):
             out = model.forward(inputs)
 
         if classifier is False:
-            return out.cpu().detach().numpy(), None, None
-
-        # Predict the one with the maximum probability
-        predictions = torch.argmax(out, -1)
-        # Save predictions
-        y_pred.append(predictions.cpu().data.numpy())
-        y_true.append(labels.cpu().data.numpy())
-        posteriors.append(out[0].cpu().detach().numpy())
-    # Get metrics
-    y_pred = np.array(y_pred).flatten()
-    y_true = np.array(y_true).flatten()
+            posteriors.append(out.cpu().detach().numpy())
+            y_pred.append(None)
+            y_true.append(None)
+        else:
+            # Predict the one with the maximum probability
+            predictions = torch.argmax(out, -1)
+            # Save predictions
+            y_pred.append(predictions.cpu().data.numpy())
+            y_true.append(labels.cpu().data.numpy())
+            posteriors.append(out[0].cpu().detach().numpy())
+    if classifier is True:
+        # Get metrics
+        y_pred = np.array(y_pred).flatten()
+        y_true = np.array(y_true).flatten()
 
     return posteriors, y_pred, y_true
 
