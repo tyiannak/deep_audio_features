@@ -38,13 +38,15 @@ Returns:
 
     max_seq_length = model.max_sequence_length
 
-    # Apply layer drop
-    model = drop_layers(model, layers_dropped)
-    model.max_sequence_length = max_seq_length
 
     zero_pad = model.zero_pad
     spec_size = model.spec_size
     fuse = model.fuse
+
+    # Apply layer drop
+    model = drop_layers(model, layers_dropped)
+    model.max_sequence_length = max_seq_length
+
 
     # print('Model:\n{}'.format(model))
 
@@ -106,12 +108,6 @@ if __name__ == '__main__':
     segmentation = args.segmentation
 
     # Test the model
-    if segmentation:
-        d, p = test_model(modelpath=model, ifile=ifile,
-                          layers_dropped=layers_dropped,
-                          test_segmentation=True)
-    else:
-        d, p = test_model(modelpath=model, ifile=ifile,
-                          layers_dropped=layers_dropped)
-
-    #print(numpy.mean(p[:, 3]))
+    d, p = test_model(modelpath=model, ifile=ifile,
+                      layers_dropped=layers_dropped,
+                      test_segmentation=segmentation)

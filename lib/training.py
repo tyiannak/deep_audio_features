@@ -318,7 +318,7 @@ def test(model, dataloader, cnn=False, classifier=True):
             out = model.forward(inputs)
 
         if classifier is False:
-            return out.cpu().detach().numpy(), None
+            return out.cpu().detach().numpy(), None, None
 
         # Predict the one with the maximum probability
         predictions = torch.argmax(out, -1)
