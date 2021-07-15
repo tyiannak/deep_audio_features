@@ -14,10 +14,11 @@ import argparse
 import os
 import random
 import time
-from librosa import output
 import numpy as np
 
 import torch
+from torchsummary import summary
+
 from dataloading.dataloading import FeatureExtractorDataset
 from lib.ae_training import train_epoch
 from matplotlib import pyplot as plt
@@ -117,12 +118,13 @@ def train_model(folders=None, ofile=None, zero_pad=config.ZERO_PAD, forced_size=
     # encoder = Encoder(height, width)
     # decoder = Decoder()
     model = ConvAE()
+    summary(model, (1, 201, 128))
 
     ### Define the loss function
     loss_fn = torch.nn.MSELoss()    
 
     ### Define an optimizer (both for the encoder and the decoder!)
-    lr= 0.001
+    lr = 0.001
     #lr = 0.0008 # Learning rate
 
 
