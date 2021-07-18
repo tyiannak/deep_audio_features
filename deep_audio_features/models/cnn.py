@@ -1,8 +1,8 @@
 import torch.nn as nn
 import sys, os
 sys.path.insert(0, os.path.join(
-    os.path.dirname(os.path.realpath(__file__)), "../"))
-from bin.config import SPECTOGRAM_SIZE
+    os.path.dirname(os.path.realpath(__file__)), "../../"))
+from deep_audio_features.bin.config import SPECTOGRAM_SIZE
 
 
 class CNN1(nn.Module):

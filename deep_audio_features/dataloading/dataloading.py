@@ -5,8 +5,8 @@ from imblearn.over_sampling import RandomOverSampler
 import matplotlib.pyplot as plt
 import sys, os
 sys.path.insert(0, os.path.join(
-    os.path.dirname(os.path.realpath(__file__)), "../"))
-from utils import sound_processing
+    os.path.dirname(os.path.realpath(__file__)), "../../"))
+from deep_audio_features.utils import sound_processing
 from tqdm import tqdm
 from PIL import Image
 import datetime

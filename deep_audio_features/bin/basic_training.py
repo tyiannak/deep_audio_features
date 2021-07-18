@@ -17,14 +17,14 @@ import torch
 from torch.utils.data import DataLoader
 import sys, os
 sys.path.insert(0, os.path.join(
-    os.path.dirname(os.path.realpath(__file__)), "../"))
-from bin.config import EPOCHS, CNN_BOOLEAN, VARIABLES_FOLDER, ZERO_PAD, \
+    os.path.dirname(os.path.realpath(__file__)), "../../"))
+from deep_audio_features.bin.config import EPOCHS, CNN_BOOLEAN, VARIABLES_FOLDER, ZERO_PAD, \
     FORCE_SIZE, SPECTOGRAM_SIZE, FEATURE_EXTRACTION_METHOD, OVERSAMPLING, \
     FUSED_SPECT, BATCH_SIZE
-from models.cnn import CNN1
-from lib.training import train_and_validate
-from utils import load_dataset
-from dataloading.dataloading import FeatureExtractorDataset
+from deep_audio_features.models.cnn import CNN1
+from deep_audio_features.lib.training import train_and_validate
+from deep_audio_features.utils import load_dataset
+from deep_audio_features.dataloading.dataloading import FeatureExtractorDataset
 
 
 def train_model(folders=None, ofile=None, zero_pad=ZERO_PAD,

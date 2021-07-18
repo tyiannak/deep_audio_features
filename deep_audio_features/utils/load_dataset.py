@@ -4,8 +4,8 @@ import glob
 from sklearn.model_selection import StratifiedShuffleSplit
 import sys, os
 sys.path.insert(0, os.path.join(
-    os.path.dirname(os.path.realpath(__file__)), "../"))
-from bin import config
+    os.path.dirname(os.path.realpath(__file__)), "../../"))
+from deep_audio_features.bin import config
 import wave
 import contextlib
 
