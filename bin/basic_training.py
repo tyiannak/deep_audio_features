@@ -15,18 +15,20 @@ import os
 import time
 import torch
 from torch.utils.data import DataLoader
-
-import config
-from config import EPOCHS, CNN_BOOLEAN, VARIABLES_FOLDER
+import sys, os
+sys.path.insert(0, os.path.join(
+    os.path.dirname(os.path.realpath(__file__)), "../"))
+from bin.config import EPOCHS, CNN_BOOLEAN, VARIABLES_FOLDER, ZERO_PAD, \
+    FORCE_SIZE, SPECTOGRAM_SIZE, FEATURE_EXTRACTION_METHOD, OVERSAMPLING, \
+    FUSED_SPECT, BATCH_SIZE
 from models.cnn import CNN1
 from lib.training import train_and_validate
 from utils import load_dataset
 from dataloading.dataloading import FeatureExtractorDataset
 
-# sys.path.insert(0, '/'.join(os.path.abspath(__file__).split(' /')[:-2]))
 
-
-def train_model(folders=None, ofile=None, zero_pad=config.ZERO_PAD, forced_size=None):
+def train_model(folders=None, ofile=None, zero_pad=ZERO_PAD,
+                forced_size=None):
     """Train a given model on a given dataset"""
     # Check that folders exist
     torch.manual_seed(0)
@@ -53,21 +55,21 @@ def train_model(folders=None, ofile=None, zero_pad=config.ZERO_PAD, forced_size=
     if forced_size is None:
         train_set = FeatureExtractorDataset(X=files_train, y=y_train,
                                             fe_method=
-                                            config.FEATURE_EXTRACTION_METHOD,
-                                            oversampling=config.OVERSAMPLING,
+                                            FEATURE_EXTRACTION_METHOD,
+                                            oversampling=OVERSAMPLING,
                                             max_sequence_length=max_seq_length,
                                             zero_pad=zero_pad,
-                                            fuse=config.FUSED_SPECT)
+                                            fuse=FUSED_SPECT)
 
     else:
         train_set = FeatureExtractorDataset(X=files_train, y=y_train,
                                             fe_method=
-                                            config.FEATURE_EXTRACTION_METHOD,
-                                            oversampling=config.OVERSAMPLING,
+                                            FEATURE_EXTRACTION_METHOD,
+                                            oversampling=OVERSAMPLING,
                                             max_sequence_length=max_seq_length,
                                             zero_pad=zero_pad,
                                             forced_size=forced_size,
-                                            fuse=config.FUSED_SPECT)
+                                            fuse=FUSED_SPECT)
 
     if forced_size is None:
         spec_size = train_set.spec_size
@@ -76,19 +78,19 @@ def train_model(folders=None, ofile=None, zero_pad=config.ZERO_PAD, forced_size=
     print('-------Creating validation set-------')
     eval_set = FeatureExtractorDataset(X=files_eval, y=y_eval,
                                        fe_method=
-                                       config.FEATURE_EXTRACTION_METHOD,
-                                       oversampling=config.OVERSAMPLING,
+                                       FEATURE_EXTRACTION_METHOD,
+                                       oversampling=OVERSAMPLING,
                                        max_sequence_length=max_seq_length,
                                        zero_pad=zero_pad,
                                        forced_size=spec_size,
-                                       fuse=config.FUSED_SPECT)
+                                       fuse=FUSED_SPECT)
 
     print('-----------------------------------')
     # Add dataloader
-    train_loader = DataLoader(train_set, batch_size=config.BATCH_SIZE,
+    train_loader = DataLoader(train_set, batch_size=BATCH_SIZE,
                               num_workers=4, drop_last=True, shuffle=True)
 
-    valid_loader = DataLoader(eval_set, batch_size=config.BATCH_SIZE,
+    valid_loader = DataLoader(eval_set, batch_size=BATCH_SIZE,
                               num_workers=4, drop_last=True, shuffle=True)
 
     # use GPU if available
@@ -103,7 +105,7 @@ def train_model(folders=None, ofile=None, zero_pad=config.ZERO_PAD, forced_size=
         height = spec_size[0]
         width = spec_size[1]
     model = CNN1(height=height, width=width, output_dim=len(classes),
-                 zero_pad=zero_pad, spec_size=spec_size, fuse=config.FUSED_SPECT)
+                 zero_pad=zero_pad, spec_size=spec_size, fuse=FUSED_SPECT)
     model.to(device)
     # Add max_seq_length to model
     model.max_sequence_length = max_seq_length
@@ -180,7 +182,7 @@ if __name__ == '__main__':
         if os.path.exists(f) is False:
             raise FileNotFoundError()
 
-    if config.FORCE_SIZE:
-        train_model(folders, ofile, forced_size=config.SPECTOGRAM_SIZE)
+    if FORCE_SIZE:
+        train_model(folders, ofile, forced_size=SPECTOGRAM_SIZE)
     else:
         train_model(folders, ofile)

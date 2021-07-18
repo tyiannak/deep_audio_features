@@ -1,6 +1,9 @@
 import librosa
 import os
 import numpy as np
+import sys
+sys.path.insert(0, os.path.join(
+    os.path.dirname(os.path.realpath(__file__)), "../"))
 from bin.config import WINDOW_LENGTH, HOP_LENGTH
 
 

@@ -1,11 +1,15 @@
 import argparse
 import torch
 from torch.utils.data import DataLoader
+import sys, os
+sys.path.insert(0, os.path.join(
+    os.path.dirname(os.path.realpath(__file__)), "../"))
 from dataloading.dataloading import FeatureExtractorDataset
 from lib.training import test
 from utils.model_editing import drop_layers
-import config
+import bin.config
 import numpy
+
 
 def test_model(modelpath, ifile, layers_dropped,
                test_segmentation=False, verbose=True):

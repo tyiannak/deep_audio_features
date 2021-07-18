@@ -1,10 +1,14 @@
 import torch.nn as nn
+import sys, os
+sys.path.insert(0, os.path.join(
+    os.path.dirname(os.path.realpath(__file__)), "../"))
 from bin.config import SPECTOGRAM_SIZE
 
 
 class CNN1(nn.Module):
     def __init__(self, height, width, output_dim=7, first_channels=32,
-                 kernel_size=5, stride=1, padding=2, zero_pad=False, spec_size=SPECTOGRAM_SIZE,
+                 kernel_size=5, stride=1, padding=2, zero_pad=False,
+                 spec_size=SPECTOGRAM_SIZE,
                  fuse=False, type='classifier'):
         super(CNN1, self).__init__()
         self.zero_pad = zero_pad
@@ -35,7 +39,8 @@ class CNN1(nn.Module):
                 nn.MaxPool2d(kernel_size=2)
             )
             self.conv_layer3 = nn.Sequential(
-                nn.Conv2d(self.cnn_channels * first_channels, (self.cnn_channels ** 2) * first_channels,
+                nn.Conv2d(self.cnn_channels * first_channels,
+                          (self.cnn_channels ** 2) * first_channels,
                           kernel_size=5, stride=stride, padding=padding),
                 nn.BatchNorm2d((self.cnn_channels ** 2) * first_channels),
                 nn.LeakyReLU(),
@@ -43,7 +48,8 @@ class CNN1(nn.Module):
             )
 
             self.conv_layer4 = nn.Sequential(
-                nn.Conv2d((self.cnn_channels**2)*first_channels, (self.cnn_channels**3) * first_channels,
+                nn.Conv2d((self.cnn_channels**2)*first_channels,
+                          (self.cnn_channels**3) * first_channels,
                           kernel_size=5, stride=stride, padding=padding),
                 nn.BatchNorm2d((self.cnn_channels ** 3) * first_channels),
                 nn.LeakyReLU(),

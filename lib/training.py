@@ -22,7 +22,9 @@ def train_and_validate(model,
     Returns: <best_model> containing the model with best parameters.
     """
 
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', verbose=True)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,
+                                                           'min',
+                                                           verbose=True)
 
     # obtain the model's device ID
     device = next(model.parameters()).device
@@ -167,7 +169,8 @@ def train(_epoch, dataloader, model, loss_function, optimizer, cnn=False):
         # Get accuracy
         correct += sum([int(a == b)
                         for a, b in zip(labels_cpu,
-                                        np.argmax(y_pred.detach().clone().to('cpu').numpy(), axis=1))])
+                                        np.argmax(y_pred.detach().clone().to('cpu').numpy(),
+                                                  axis=1))])
         # Backward pass: compute gradient wrt model parameters
         loss.backward()
 
