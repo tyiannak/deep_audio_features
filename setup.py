@@ -1,5 +1,5 @@
 import os
-from setuptools import setup
+from setuptools import setup, find_packages
 
 def read(fname):
     try:
@@ -10,14 +10,15 @@ def read(fname):
 
 requirements = read('requirements.txt').splitlines()
 
+
 setup(name='deep_audio_features',
-      version='0.1.1',
+      version='0.1.5',
       description='Extract supervised deep features using CNN audio classifiers',
       url='https://github.com/tyiannak/deep_audio_features',
       author='Theodoros Giannakopoulos',
       author_email='tyiannak@gmail.com',
       license='MIT',
-      packages=['deep_audio_features'],
+      packages=find_packages(),
       zip_safe=False,
       install_requires=requirements,
       )
