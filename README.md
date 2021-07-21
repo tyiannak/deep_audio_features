@@ -4,12 +4,16 @@
 
 #### Install and path setup
 
+Εither use the source code
+
 ```bash
 git clone https://github.com/tyiannak/deep_audio_features
-cd deep_audio_features
-source scripts/setup_paths.sh
 ```
 
+Or install using pip
+```bash
+git clone https://github.com/tyiannak/deep_audio_features
+```
 
 
 #### CORE UTILITIES
@@ -17,16 +21,18 @@ source scripts/setup_paths.sh
 ##### training script
 
 ```python
-python3 bin/basic_training.py -i /path/to/folder1 /path/to/folder2
+python3 deep_audio_features/bin/basic_training.py -i /path/to/folder1 /path/to/folder2
 ```
 `-i` : select the folders where the data will be loaded from.
 
 `-o` : select the exported file name.
 
+TODO PYTHON SCRIPT
+
 ##### testing script
 
 ```
-python3 bin/basic_test.py -m /path/to/model/ -i /path/to/file (-s)
+python3 deep_audio_features/bin/basic_test.py -m /path/to/model/ -i /path/to/file (-s)
 ```
 `-i` : select the folders  where the testing data will be loaded from.
 
@@ -34,12 +40,13 @@ python3 bin/basic_test.py -m /path/to/model/ -i /path/to/file (-s)
 
 `-s`  : if included extracts segment level predictions of a sequence
 
+TODO PYTHON SCRIPT
 
 
 ##### transfer learning script
 
 ```
-python3 bin/transfer_learning.py -m /path/to/model -i /path/to/folder1 /path/to/folder2 -s
+python3 deep_audio_features/bin/transfer_learning.py -m /path/to/model -i /path/to/folder1 /path/to/folder2 -s
 ```
 `-m` : select a model to apply fine-tuning.
 
@@ -47,3 +54,4 @@ python3 bin/transfer_learning.py -m /path/to/model -i /path/to/folder1 /path/to/
 
 `-s` : select which strategy to use. `0` applies fine-tuning to all layers while `1` freezes `Conv2d` layers and fine-tunes `Linear` only.
 
+TODO PYTHON SCRIPT
