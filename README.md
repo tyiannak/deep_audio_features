@@ -27,7 +27,10 @@ python3 deep_audio_features/bin/basic_training.py -i /path/to/folder1 /path/to/f
 
 `-o` : select the exported file name.
 
-TODO PYTHON SCRIPT
+```python
+from deep_audio_features.bin import basic_training as bt
+bt.train_model(["low","medium","high"], "enegy")
+```
 
 ##### testing script
 
