@@ -1,8 +1,4 @@
-import torch
 import torch.nn as nn
-from torch.nn.modules.activation import Sigmoid
-from bin.config import SPECTOGRAM_SIZE # (51, 128)
-import torch.nn.functional as F
 
 # def calc_out_size(self):
 #         height = int(self.height / 16)
@@ -36,8 +32,8 @@ class ConvAE(nn.Module):
             nn.BatchNorm2d(32),
             nn.ReLU(),
             nn.MaxPool2d(kernel_size=2), # torch.Size([16, 32, 8, 12])
-           
-            
+
+
         )
 
 
@@ -46,11 +42,15 @@ class ConvAE(nn.Module):
             nn.ReLU(True),
             nn.ConvTranspose2d(16, 16, 5, stride=3, padding=2, output_padding=0),
             nn.ReLU(True),
-            nn.ConvTranspose2d(16, 1, 7, stride=3, padding=2, output_padding=0),
+            nn.ConvTranspose2d(16, 1, (5, 3), stride=3, padding=1, output_padding=(0, 1)),
             nn.Sigmoid()
         )
 
     def forward(self, x):
-        encoder = self.encoder(x)
-        decoder = self.decoder(encoder)
-        return encoder, decoder
+        print()
+        print("Start Encode: ", x.shape)
+        x = self.encoder(x)
+        print("Finished Encode: ", x.shape)
+        x = self.decoder(x)
+        print("Finished Decode: ", x.shape)
+        return x
