@@ -23,11 +23,6 @@ import torch.nn as nn
 class ConvAE(nn.Module):
     def __init__(self):
         super(ConvAE, self).__init__()
-        self.num_cnn_layers = 3
-        self.cnn_channels = 2
-        self.height = 201
-        self.width = 128
-        self.first_channels = 16
 
         self.encoder = nn.Sequential(
             nn.Conv2d(1, 16, 5),
@@ -58,10 +53,3 @@ class ConvAE(nn.Module):
         x = self.decoder(x)
         print("Finished Decode: ", x.shape)
         return x
-
-    def calc_out_size(self):
-        height = int(self.height / 16)
-        width = int(self.width / 16)
-        kernels = (self.cnn_channels ** (self.num_cnn_layers - 1)) *\
-            self.first_channels
-        return kernels * height * width
