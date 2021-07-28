@@ -12,7 +12,7 @@ git clone https://github.com/tyiannak/deep_audio_features
 
 Or install using pip
 ```bash
-git clone https://github.com/tyiannak/deep_audio_features
+pip3 install deep-audio-features -U 
 ```
 
 
