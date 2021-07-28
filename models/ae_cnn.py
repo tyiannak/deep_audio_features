@@ -23,26 +23,30 @@ import torch.nn as nn
 class ConvAE(nn.Module):
     def __init__(self):
         super(ConvAE, self).__init__()
+        self.num_cnn_layers = 3
+        self.cnn_channels = 2
+        self.height = 201
+        self.width = 128
+        self.first_channels = 16
+
         self.encoder = nn.Sequential(
-            nn.Conv2d(1, 16, 5, stride=2, padding=1),
-            #nn.BatchNorm2d(16),
+            nn.Conv2d(1, 16, 5),
+            nn.BatchNorm2d(16),
             nn.ReLU(),
-            nn.MaxPool2d(kernel_size=2),
-            nn.Conv2d(16, 32, 3, stride=2, padding=1),
+            nn.Conv2d(16, 32, 5),
             nn.BatchNorm2d(32),
             nn.ReLU(),
-            nn.MaxPool2d(kernel_size=2), # torch.Size([16, 32, 8, 12])
-
-
+            nn.Conv2d(32, 64, 3)
         )
 
-
         self.decoder = nn.Sequential(
-            nn.ConvTranspose2d(32, 16, 3, stride=2, padding=1, output_padding=0),
-            nn.ReLU(True),
-            nn.ConvTranspose2d(16, 16, 5, stride=3, padding=2, output_padding=0),
-            nn.ReLU(True),
-            nn.ConvTranspose2d(16, 1, (5, 3), stride=3, padding=1, output_padding=(0, 1)),
+            nn.ConvTranspose2d(64, 32, 3),
+            nn.BatchNorm2d(32),
+            nn.ReLU(),
+            nn.ConvTranspose2d(32, 16, 5),
+            nn.BatchNorm2d(16),
+            nn.ReLU(),
+            nn.ConvTranspose2d(16, 1, 5),
             nn.Sigmoid()
         )
 
@@ -54,3 +58,10 @@ class ConvAE(nn.Module):
         x = self.decoder(x)
         print("Finished Decode: ", x.shape)
         return x
+
+    def calc_out_size(self):
+        height = int(self.height / 16)
+        width = int(self.width / 16)
+        kernels = (self.cnn_channels ** (self.num_cnn_layers - 1)) *\
+            self.first_channels
+        return kernels * height * width

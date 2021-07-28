@@ -6,7 +6,6 @@ import numpy as np
 from sklearn.metrics import f1_score
 
 
-
 ## Training function
 def train_epoch(model, device, dataloader, loss_fn, optimizer):
     
@@ -27,13 +26,10 @@ def train_epoch(model, device, dataloader, loss_fn, optimizer):
         inputs = inputs[:, np.newaxis, :, :]
         print("Size of input data: {}".format(inputs.size()))
 
-        encoder, decoder = model(inputs)
-        print("Size of encoder's data: {}".format(encoder.size()))
-
-        print("Size of decoder's data: {}".format(decoder.size()))
+        decoded = model(inputs)
 
         # Evaluate loss
-        loss = loss_fn(decoder, inputs)
+        loss = loss_fn(decoded, inputs)
         # Backward pass
         loss.backward()
         optimizer.step()

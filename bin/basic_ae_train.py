@@ -107,7 +107,7 @@ def train_model(folders=None, ofile=None, zero_pad=config.ZERO_PAD, forced_size=
     # encoder = Encoder(height, width)
     # decoder = Decoder()
     model = ConvAE()
-    summary(model, (1, 201, 128))
+    #summary(model, (1, 201, 128))
 
     model.to(device)
 
