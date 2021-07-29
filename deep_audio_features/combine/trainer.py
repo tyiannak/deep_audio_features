@@ -8,8 +8,11 @@ from collections import Counter
 import yaml
 from sklearn.model_selection import GridSearchCV
 from sklearn.model_selection import RepeatedStratifiedKFold
-from bin.config import VARIABLES_FOLDER
-import feature_extraction
+import sys
+sys.path.insert(0, os.path.join(
+    os.path.dirname(os.path.realpath(__file__)), "../../"))
+from deep_audio_features.bin.config import VARIABLES_FOLDER
+import deep_audio_features.combine.feature_extraction
 
 
 def train(folders, ofile=None):
@@ -49,10 +52,12 @@ def train(folders, ofile=None):
 
     print('\nExtracting features...')
     if modification['extract_nn_features'] and 'dim_reduction' not in modification:
-        X, y, pcas = feature_extraction.extraction(folders, modification)
+        X, y, pcas = deep_audio_features.combine.feature_extraction.\
+            extraction(folders, modification)
         modification['dim_reduction'] = pcas
     else:
-        X, y = feature_extraction.extraction(folders, modification)
+        X, y = deep_audio_features.combine.feature_extraction.\
+            extraction(folders, modification)
     print('X (train data) shape: {}'.format(X.shape))
     print('y (train labels) shape: {}'.format(y.shape))
 

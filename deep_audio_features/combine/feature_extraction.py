@@ -1,15 +1,18 @@
 import os
-import glob2 as glob
+import glob
 import numpy as np
 import copy
 import torch
 from sklearn.decomposition import TruncatedSVD
-from dataloading.dataloading import FeatureExtractorDataset
-from bin import config
 from pyAudioAnalysis import MidTermFeatures as aF
 from pyAudioAnalysis import audioBasicIO as aIO
-from utils.load_dataset import folders_mapping
-from utils import get_models
+import sys
+sys.path.insert(0, os.path.join(
+    os.path.dirname(os.path.realpath(__file__)), "../../"))
+from deep_audio_features.utils.load_dataset import folders_mapping
+from deep_audio_features.utils import get_models
+from deep_audio_features.dataloading.dataloading import FeatureExtractorDataset
+from deep_audio_features.bin import config
 from PIL import Image
 
 

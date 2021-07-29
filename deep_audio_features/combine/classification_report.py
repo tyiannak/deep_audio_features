@@ -3,8 +3,11 @@ import os
 import pickle
 import time
 from sklearn.metrics import classification_report
-from bin.config import VARIABLES_FOLDER
-import feature_extraction
+import sys
+sys.path.insert(0, os.path.join(
+    os.path.dirname(os.path.realpath(__file__)), "../../"))
+from deep_audio_features.bin.config import VARIABLES_FOLDER
+import deep_audio_features.combine.feature_extraction
 
 
 def combine_test_report(folders, modification, ofile=None):
@@ -33,7 +36,8 @@ def combine_test_report(folders, modification, ofile=None):
     model = modification['Classifier']
 
     print('Extracting features...')
-    X, y = feature_extraction.extraction(folders, modification)
+    X, y = deep_audio_features.combine.\
+        feature_extraction.extraction(folders, modification)
     print("Detailed classification report:")
     y_true, y_pred = y, model.predict(X)
     print(classification_report(y_true, y_pred))
