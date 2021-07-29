@@ -15,7 +15,7 @@ from deep_audio_features.bin.config import VARIABLES_FOLDER
 import deep_audio_features.combine.feature_extraction
 
 
-def train(folders, ofile=None):
+def train(folders, ofile=None, config_file=r'combine/config.yaml'):
     """
     Trains a classifier using combined features (pyAudioAnalysis & CNN
     models' fetures) and GridSearchCV to find best parameters. Reads
@@ -39,7 +39,7 @@ def train(folders, ofile=None):
         + a Classifier key that contains the final classifier.
     """
 
-    with open(r'combine/config.yaml') as file:
+    with open(config_file) as file:
         modification = yaml.load(file, Loader=yaml.FullLoader)
 
     if modification['which_classifier']['type'] == 'svm':
@@ -85,7 +85,8 @@ def train(folders, ofile=None):
     clf_stdev = grid_clf.cv_results_['std_test_score'][grid_clf.best_index_]
 
     print("Best parameters: {}".format(clf_params))
-    print("Best validation score:      {:0.5f} (+/-{:0.5f})".format(clf_score, clf_stdev))
+    print("Best validation score:      "
+          "{:0.5f} (+/-{:0.5f})".format(clf_score, clf_stdev))
 
     timestamp = time.ctime()
     if ofile is None:
@@ -117,12 +118,16 @@ if __name__ == '__main__':
                         type=str, nargs='+', help='Input folders')
     parser.add_argument('-o', '--ofile', required=False, default=None,
                         type=str, help='Model name.')
+    parser.add_argument('-c', '--config', required=False, default=None,
+                        type=str, help='Config file.')
+
 
     args = parser.parse_args()
 
     # Get argument
     folders = args.input
     ofile = args.ofile
+    config_file = args.config
 
     # Fix any type errors
     folders = [f.replace(',', '').strip() for f in folders]
@@ -133,4 +138,4 @@ if __name__ == '__main__':
         if os.path.exists(f) is False:
             raise FileNotFoundError()
 
-    model = train(folders, ofile)
+    model = train(folders, ofile, config_file)
