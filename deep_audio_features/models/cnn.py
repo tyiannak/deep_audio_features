@@ -1,10 +1,14 @@
 import torch.nn as nn
-from bin.config import SPECTOGRAM_SIZE
+import sys, os
+sys.path.insert(0, os.path.join(
+    os.path.dirname(os.path.realpath(__file__)), "../../"))
+from deep_audio_features.bin.config import SPECTOGRAM_SIZE
 
 
 class CNN1(nn.Module):
     def __init__(self, height, width, output_dim=7, first_channels=32,
-                 kernel_size=5, stride=1, padding=2, zero_pad=False, spec_size=SPECTOGRAM_SIZE,
+                 kernel_size=5, stride=1, padding=2, zero_pad=False,
+                 spec_size=SPECTOGRAM_SIZE,
                  fuse=False, type='classifier'):
         super(CNN1, self).__init__()
         self.zero_pad = zero_pad
@@ -35,7 +39,8 @@ class CNN1(nn.Module):
                 nn.MaxPool2d(kernel_size=2)
             )
             self.conv_layer3 = nn.Sequential(
-                nn.Conv2d(self.cnn_channels * first_channels, (self.cnn_channels ** 2) * first_channels,
+                nn.Conv2d(self.cnn_channels * first_channels,
+                          (self.cnn_channels ** 2) * first_channels,
                           kernel_size=5, stride=stride, padding=padding),
                 nn.BatchNorm2d((self.cnn_channels ** 2) * first_channels),
                 nn.LeakyReLU(),
@@ -43,7 +48,8 @@ class CNN1(nn.Module):
             )
 
             self.conv_layer4 = nn.Sequential(
-                nn.Conv2d((self.cnn_channels**2)*first_channels, (self.cnn_channels**3) * first_channels,
+                nn.Conv2d((self.cnn_channels**2)*first_channels,
+                          (self.cnn_channels**3) * first_channels,
                           kernel_size=5, stride=stride, padding=padding),
                 nn.BatchNorm2d((self.cnn_channels ** 3) * first_channels),
                 nn.LeakyReLU(),
@@ -72,19 +78,16 @@ class CNN1(nn.Module):
         # recursively: (batch_size,conv_output,max_seq/2 -1,features/2 -1)
         # CNN
         out = self.conv_layer1(x)
+        out = self.conv_layer2(out)
+        out = self.conv_layer3(out)
+        out = self.conv_layer4(out)
+
         if self.type == 'classifier':
-            out = self.conv_layer2(out)
-
-            out = self.conv_layer3(out)
-            out = self.conv_layer4(out)
             out = out.view(out.size(0), -1)
-
             # DNN -- pass through linear layers
             out = self.linear_layer1(out)
             out = self.linear_layer2(out)
             out = self.linear_layer3(out)
-        else:
-            out = out.view(out.size(0), -1)
 
         return out
 

@@ -1,11 +1,14 @@
 import argparse
 import torch
 from torch.utils.data import DataLoader
-from dataloading.dataloading import FeatureExtractorDataset
-from lib.training import test
-from utils.model_editing import drop_layers
-from basic_test import test_model
-import config
+import sys, os
+sys.path.insert(0, os.path.join(
+    os.path.dirname(os.path.realpath(__file__)), "../../"))
+from deep_audio_features.dataloading.dataloading import FeatureExtractorDataset
+from deep_audio_features.lib.training import test
+from deep_audio_features.utils.model_editing import drop_layers
+from deep_audio_features.bin.basic_test import test_model
+import deep_audio_features.bin.config
 import os
 import glob
 import numpy as np

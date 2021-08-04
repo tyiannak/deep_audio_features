@@ -8,11 +8,14 @@ from collections import Counter
 import yaml
 from sklearn.model_selection import GridSearchCV
 from sklearn.model_selection import RepeatedStratifiedKFold
-from bin.config import VARIABLES_FOLDER
-import feature_extraction
+import sys
+sys.path.insert(0, os.path.join(
+    os.path.dirname(os.path.realpath(__file__)), "../../"))
+from deep_audio_features.bin.config import VARIABLES_FOLDER
+import deep_audio_features.combine.feature_extraction
 
 
-def train(folders, ofile=None):
+def train(folders, ofile=None, config_file=r'combine/config.yaml'):
     """
     Trains a classifier using combined features (pyAudioAnalysis & CNN
     models' fetures) and GridSearchCV to find best parameters. Reads
@@ -36,7 +39,7 @@ def train(folders, ofile=None):
         + a Classifier key that contains the final classifier.
     """
 
-    with open(r'combine/config.yaml') as file:
+    with open(config_file) as file:
         modification = yaml.load(file, Loader=yaml.FullLoader)
 
     if modification['which_classifier']['type'] == 'svm':
@@ -48,11 +51,14 @@ def train(folders, ofile=None):
         return modification
 
     print('\nExtracting features...')
-    if modification['extract_nn_features'] and 'dim_reduction' not in modification:
-        X, y, pcas = feature_extraction.extraction(folders, modification)
+    if modification['extract_nn_features'] and \
+            'dim_reduction' not in modification:
+        X, y, pcas = deep_audio_features.combine.feature_extraction.\
+            extraction(folders, modification)
         modification['dim_reduction'] = pcas
     else:
-        X, y = feature_extraction.extraction(folders, modification)
+        X, y = deep_audio_features.combine.feature_extraction.\
+            extraction(folders, modification)
     print('X (train data) shape: {}'.format(X.shape))
     print('y (train labels) shape: {}'.format(y.shape))
 
@@ -80,7 +86,8 @@ def train(folders, ofile=None):
     clf_stdev = grid_clf.cv_results_['std_test_score'][grid_clf.best_index_]
 
     print("Best parameters: {}".format(clf_params))
-    print("Best validation score:      {:0.5f} (+/-{:0.5f})".format(clf_score, clf_stdev))
+    print("Best validation score:      "
+          "{:0.5f} (+/-{:0.5f})".format(clf_score, clf_stdev))
 
     timestamp = time.ctime()
     if ofile is None:
@@ -112,12 +119,16 @@ if __name__ == '__main__':
                         type=str, nargs='+', help='Input folders')
     parser.add_argument('-o', '--ofile', required=False, default=None,
                         type=str, help='Model name.')
+    parser.add_argument('-c', '--config', required=False, default=None,
+                        type=str, help='Config file.')
+
 
     args = parser.parse_args()
 
     # Get argument
     folders = args.input
     ofile = args.ofile
+    config_file = args.config
 
     # Fix any type errors
     folders = [f.replace(',', '').strip() for f in folders]
@@ -128,4 +139,4 @@ if __name__ == '__main__':
         if os.path.exists(f) is False:
             raise FileNotFoundError()
 
-    model = train(folders, ofile)
+    model = train(folders, ofile, config_file)

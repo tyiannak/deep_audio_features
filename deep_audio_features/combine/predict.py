@@ -1,6 +1,10 @@
 import argparse
 import pickle
-import feature_extraction
+import sys
+import os
+sys.path.insert(0, os.path.join(
+    os.path.dirname(os.path.realpath(__file__)), "../../"))
+import deep_audio_features.combine.feature_extraction
 
 
 def predict(ifile, modification):
@@ -20,9 +24,10 @@ def predict(ifile, modification):
     model = modification['Classifier']
 
     print('Extracting features...')
-    X = feature_extraction.extraction(ifile, modification,
-                                      folders=False,
-                                      show_hist=False)
+    X = deep_audio_features.combine.feature_extraction.extraction(ifile,
+                                                                  modification,
+                                                                  folders=False,
+                                                                  show_hist=False)
 
     y_pred = model.predict(X)
     print("Predicted class: {}".format(y_pred[0]))

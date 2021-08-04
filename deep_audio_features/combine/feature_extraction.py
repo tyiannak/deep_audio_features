@@ -1,15 +1,18 @@
 import os
-import glob2 as glob
+import glob
 import numpy as np
 import copy
 import torch
-from sklearn.decomposition import TruncatedSVD
-from dataloading.dataloading import FeatureExtractorDataset
-from bin import config
+from sklearn.decomposition import PCA
 from pyAudioAnalysis import MidTermFeatures as aF
 from pyAudioAnalysis import audioBasicIO as aIO
-from utils.load_dataset import folders_mapping
-from utils import get_models
+import sys
+sys.path.insert(0, os.path.join(
+    os.path.dirname(os.path.realpath(__file__)), "../../"))
+from deep_audio_features.utils.load_dataset import folders_mapping
+from deep_audio_features.utils import get_models
+from deep_audio_features.dataloading.dataloading import FeatureExtractorDataset
+from deep_audio_features.bin import config
 from PIL import Image
 
 
@@ -93,7 +96,7 @@ def resize_image(image, new_size, device):
 def extract_segment_nn_features(data, model, device,
                                 segment_step, enough_memory=False):
     """
-     Extract features from audio using outputs of first convolutional
+     Extract features from audio using outputs of fourth convolutional
      layer of a pretrained deep neural network. If the size of an image is
      greater than the fixed size that a CNN demands, overlapping is
      used. Else we resize the image.
@@ -145,6 +148,7 @@ def extract_segment_nn_features(data, model, device,
             segment = resize_image(x, segment_size, device)
 
             out = model.forward(segment)
+            out = out.view(out.size(0), -1)
             out = out.squeeze()
             out = out.type(torch.float32).detach().clone().to('cpu').numpy()
             out = out.flatten()
@@ -253,7 +257,8 @@ def extraction(input, modification, folders=True, show_hist=True):
             mu = np.mean(sequence, axis=1)
             sequences_short_features_stats.append(mu)
 
-        sequences_short_features_stats = np.asarray(sequences_short_features_stats)
+        sequences_short_features_stats = \
+            np.asarray(sequences_short_features_stats)
 
     if modification['extract_nn_features']:
         get_models.download_missing(modification)
@@ -281,7 +286,7 @@ def extraction(input, modification, folders=True, show_hist=True):
                 model = copy.deepcopy(torch.load(model_path))
             else:
                 model = copy.deepcopy(torch.load(
-                    model_path,map_location=torch.device('cpu')))
+                    model_path, map_location=torch.device('cpu')))
 
             model.type = 'feature_extractor'
 
@@ -290,16 +295,13 @@ def extraction(input, modification, folders=True, show_hist=True):
             nn_features_stats, _ = extract_segment_nn_features(
                         data.features.copy(), model,
                 device, modification['segment_step'])
-
             if 'dim_reduction' in modification:
                 pca = pcas[j]
             else:
                 print('--> Finding {} principal components using'
-                      ' TruncatedSVD:'.format(n_components))
-                # Using TruncatedSVD instead of PCA for memory efficiency.
-                # However, PCA gives better results.
-                pca = TruncatedSVD(n_components=n_components,
-                                   algorithm='arpack')
+                      ' PCA:'.format(n_components))
+
+                pca = PCA(n_components=n_components)
                 pca.fit(nn_features_stats)
                 pcas.append(pca)
             print('    Applied dimensonality reduction to CNN features')

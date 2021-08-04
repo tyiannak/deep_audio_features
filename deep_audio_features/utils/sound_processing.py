@@ -1,7 +1,10 @@
 import librosa
 import os
 import numpy as np
-from bin.config import WINDOW_LENGTH, HOP_LENGTH
+import sys
+sys.path.insert(0, os.path.join(
+    os.path.dirname(os.path.realpath(__file__)), "../../"))
+from deep_audio_features.bin.config import WINDOW_LENGTH, HOP_LENGTH
 
 
 def load_wav(filename):

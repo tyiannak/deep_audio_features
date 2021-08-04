@@ -14,20 +14,26 @@ import argparse
 import os
 import time
 import torch
+import sys
 from torch.utils.data import DataLoader
 
-import config
-from config import EPOCHS, CNN_BOOLEAN, VARIABLES_FOLDER
-from lib.training import train_and_validate
-from utils import load_dataset
-from utils.model_editing import fine_tune_model, print_require_grad_parameter
-from dataloading.dataloading import FeatureExtractorDataset
+sys.path.insert(0, os.path.join(
+    os.path.dirname(os.path.realpath(__file__)), "../../"))
+
+from deep_audio_features.bin.config import EPOCHS, CNN_BOOLEAN, VARIABLES_FOLDER, ZERO_PAD, \
+    FORCE_SIZE, SPECTOGRAM_SIZE, FEATURE_EXTRACTION_METHOD, OVERSAMPLING, \
+    FUSED_SPECT, BATCH_SIZE
+from deep_audio_features.lib.training import train_and_validate
+from deep_audio_features.utils import load_dataset
+from deep_audio_features.utils.model_editing import fine_tune_model, \
+    print_require_grad_parameter
+from deep_audio_features.dataloading.dataloading import FeatureExtractorDataset
 
 # sys.path.insert(0, '/'.join(os.path.abspath(__file__).split(' /')[:-2]))
 
 
 def transfer_learning(model=None, folders=None, strategy=0,
-                      zero_pad=config.ZERO_PAD, forced_size=None):
+                      zero_pad=ZERO_PAD, forced_size=None):
     """Transfer learning from all folders given to a model."""
 
     # Arguments check
@@ -68,28 +74,28 @@ def transfer_learning(model=None, folders=None, strategy=0,
         spec_size = forced_size
 
     train_set = FeatureExtractorDataset(X=files_train, y=y_train,
-                                        fe_method=config.FEATURE_EXTRACTION_METHOD,
-                                        oversampling=config.OVERSAMPLING,
+                                        fe_method=FEATURE_EXTRACTION_METHOD,
+                                        oversampling=OVERSAMPLING,
                                         max_sequence_length=max_seq_length,
                                         zero_pad=zero_pad,
                                         forced_size=spec_size,
-                                        fuse=config.FUSED_SPECT)
+                                        fuse=FUSED_SPECT)
 
     eval_set = FeatureExtractorDataset(X=files_eval, y=y_eval,
-                                       fe_method=config.FEATURE_EXTRACTION_METHOD,
-                                       oversampling=config.OVERSAMPLING,
+                                       fe_method=FEATURE_EXTRACTION_METHOD,
+                                       oversampling=OVERSAMPLING,
                                        max_sequence_length=max_seq_length,
                                        zero_pad=zero_pad,
                                        forced_size=spec_size,
-                                       fuse=config.FUSED_SPECT)
+                                       fuse=FUSED_SPECT)
 
     # Add dataloader
     train_loader = DataLoader(
-        train_set, batch_size=config.BATCH_SIZE, num_workers=4, drop_last=True,
+        train_set, batch_size=BATCH_SIZE, num_workers=4, drop_last=True,
         shuffle=True)
 
     valid_loader = DataLoader(
-        eval_set, batch_size=config.BATCH_SIZE, num_workers=4, drop_last=True,
+        eval_set, batch_size=BATCH_SIZE, num_workers=4, drop_last=True,
         shuffle=True)
 
     # ======= MODEL =================================================
@@ -172,8 +178,8 @@ if __name__ == '__main__':
         raise FileNotFoundError
 
     # If everything is ok, time to start
-    if config.FORCE_SIZE:
+    if FORCE_SIZE:
         transfer_learning(model=modelpath, folders=folders,
-                          strategy=strategy, forced_size=config.SPECTOGRAM_SIZE)
+                          strategy=strategy, forced_size=SPECTOGRAM_SIZE)
     else:
         transfer_learning(model=modelpath, folders=folders, strategy=strategy)

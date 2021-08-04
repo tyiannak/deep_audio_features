@@ -3,7 +3,10 @@ import numpy as np
 from torch.utils.data import Dataset
 from imblearn.over_sampling import RandomOverSampler
 import matplotlib.pyplot as plt
-from utils import sound_processing
+import sys, os
+sys.path.insert(0, os.path.join(
+    os.path.dirname(os.path.realpath(__file__)), "../../"))
+from deep_audio_features.utils import sound_processing
 from tqdm import tqdm
 from PIL import Image
 import datetime
