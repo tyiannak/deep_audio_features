@@ -78,19 +78,16 @@ class CNN1(nn.Module):
         # recursively: (batch_size,conv_output,max_seq/2 -1,features/2 -1)
         # CNN
         out = self.conv_layer1(x)
+        out = self.conv_layer2(out)
+        out = self.conv_layer3(out)
+        out = self.conv_layer4(out)
+
         if self.type == 'classifier':
-            out = self.conv_layer2(out)
-
-            out = self.conv_layer3(out)
-            out = self.conv_layer4(out)
             out = out.view(out.size(0), -1)
-
             # DNN -- pass through linear layers
             out = self.linear_layer1(out)
             out = self.linear_layer2(out)
             out = self.linear_layer3(out)
-        else:
-            out = out.view(out.size(0), -1)
 
         return out
 
