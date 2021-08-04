@@ -51,7 +51,8 @@ def train(folders, ofile=None, config_file=r'combine/config.yaml'):
         return modification
 
     print('\nExtracting features...')
-    if modification['extract_nn_features'] and 'dim_reduction' not in modification:
+    if modification['extract_nn_features'] and \
+            'dim_reduction' not in modification:
         X, y, pcas = deep_audio_features.combine.feature_extraction.\
             extraction(folders, modification)
         modification['dim_reduction'] = pcas

@@ -257,7 +257,8 @@ def extraction(input, modification, folders=True, show_hist=True):
             mu = np.mean(sequence, axis=1)
             sequences_short_features_stats.append(mu)
 
-        sequences_short_features_stats = np.asarray(sequences_short_features_stats)
+        sequences_short_features_stats = \
+            np.asarray(sequences_short_features_stats)
 
     if modification['extract_nn_features']:
         get_models.download_missing(modification)
