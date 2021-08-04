@@ -73,7 +73,16 @@ tl.transfer_learning('pkl/emotion_energy.pt', ['test/low/', 'test/high'] , strat
 
 ## Combine CNN features
 
-In deep_audio_features/combine/config.yaml choose (i) which CNN models you want to combine by modifying either the model_paths or the google_drive_ids fields, (ii) whether you want to combine different CNN models (extract_nn_features boolean variable), use hand-crafted audio features (extract_basic_features boolean variable), or combine the aforementioned choices (both variables set to True).
+In `deep_audio_features/combine/config.yaml` choose 
+(i) which CNN models you want to combine by 
+modifying either the model_paths or the 
+`google_drive_ids fields` (in case the models are stored in google drive),
+ (ii) whether you want to combine different CNN 
+ models (`extract_nn_features` boolean variable), 
+ use hand-crafted audio features using the [pyAudioAnalysis library](https://github.com/tyiannak/pyAudioAnalysis)
+ (`extract_basic_features` boolean variable), 
+ or combine the aforementioned choices 
+ (both variables set to `True`).
 
 ### Train a combination of CNNs
 ```
