@@ -71,8 +71,11 @@ tl.transfer_learning('pkl/emotion_energy.pt', ['test/low/', 'test/high'] , strat
 ```
 (The model will be saved in a local filename based on the timestamp)
 
-## Combine CNNs with hand-crafted features
-### Train a combination of CNNs and hand-crafted features
+## Combine CNN features
+
+In deep_audio_features/combine/config.yaml choose (i) which CNN models you want to combine by modifying either the model_paths or the google_drive_ids fields, (ii) whether you want to combine different CNN models (extract_nn_features boolean variable), use hand-crafted audio features (extract_basic_features boolean variable), or combine the aforementioned choices (both variables set to True).
+
+### Train a combination of CNNs
 ```
 python3 deep_audio_features/combine/trainer.py -i 4class_small/music_small 4class_small/speech_small -c deep_audio_features/combine/config.yaml
 ```
@@ -81,6 +84,7 @@ or in Python:
 from deep_audio_features.combine import trainer
 trainer.train(["4class_small/music_small", "4class_small/speech_small"], None, "config.yaml")
 ```
+
 ### Evaluate the combiner
 ```
 python3 deep_audio_features/combine/classification_report.py -m pkl/SVM_Thu_Jul_29_20:06:51_2021.pt -i 4class_small/music_small 4class_small/speech_small
