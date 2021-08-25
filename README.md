@@ -32,7 +32,7 @@ python3 deep_audio_features/bin/basic_training.py -i /path/to/folder1 /path/to/f
 Or call the following function in Python:
 ```python
 from deep_audio_features.bin import basic_training as bt
-bt.train_model(["low","medium","high"], "enegy")
+bt.train_model(["low","medium","high"], "energy")
 ```
 The code above reads the WAV files in 3 folders, uses the folder names as classnames, extracts 
 spectrogram representations from the respective sounds, trains and validates the CNN and saves the 
@@ -52,7 +52,7 @@ python3 deep_audio_features/bin/basic_test.py -m /path/to/model/ -i /path/to/fil
 Or call the following function in Python:
 ```python
 from deep_audio_features.bin import basic_test as btest
-d, p = btest.test_model("pkl/enegy.pt", 'some_file.wav', layers_dropped=0, test_segmentation=False)
+d, p = btest.test_model("pkl/energy.pt", 'some_file.wav', layers_dropped=0, test_segmentation=False)
 ```
 The code above will use the CNN trained befre to classify an audio signal stored in `some_file.wav`.
 `d` stores the decision (class indices) and `p` the soft outputs of the classes. 
