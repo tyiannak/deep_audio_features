@@ -1,10 +1,12 @@
 import argparse
 import os
-from utils import load_dataset
+import pickle
+from deep_audio_features.utils import load_dataset
 import torch
 from torch.utils.data import DataLoader
-from dataloading.dataloading import FeatureExtractorDataset
-from lib.training import test
+from deep_audio_features.dataloading.dataloading import FeatureExtractorDataset
+from deep_audio_features.models.cnn import CNN1
+from deep_audio_features.lib.training import test
 from sklearn.metrics import classification_report
 import config
 
@@ -12,7 +14,15 @@ import config
 def test_report(modelpath, folders, layers_dropped):
 
 
-    model = torch.load(modelpath)
+    #model = torch.load(modelpath)
+    with open(modelpath, "rb") as input_file:
+        model_params = pickle.load(input_file)
+
+    model = CNN1(height=model_params["height"], width=model_params["width"], output_dim=model_params["output_dim"],
+                 zero_pad=model_params["zero_pad"], spec_size=model_params["spec_size"], fuse=model_params["fuse"], type=model_params["type"])
+    model.max_sequence_length = model_params["max_sequence_length"]
+    model.load_state_dict(model_params["state_dict"])
+
     max_seq_length = model.max_sequence_length
     files_test, y_test = load_dataset.load(
         folders=folders, test=False, validation=False)
