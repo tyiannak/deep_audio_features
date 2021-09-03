@@ -142,7 +142,17 @@ def transfer_learning(model=None, folders=None, strategy=0,
         VARIABLES_FOLDER, model_id)
     print(f"\nSaving model to: {model_id}\n")
     # Save model for later use
-    torch.save(best_model, modelname)
+    # torch.save(best_model, modelname)
+
+    model_params = {
+        "height": best_model.height, "width": best_model.width, "output_dim": best_model.output_dim,
+        "zero_pad": best_model.zero_pad, "spec_size": best_model.spec_size, "fuse": best_model.fuse,
+        "validation_f1": valid_f1, "max_sequence_length": best_model.max_sequence_length,
+        "type": best_model.type, "state_dict": best_model.state_dict()
+    }
+
+    with open(modelname, "wb") as output_file:
+        pickle.dump(model_params, output_file)
 
 
 if __name__ == '__main__':
