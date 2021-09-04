@@ -15,11 +15,13 @@ import os
 import time
 import torch
 import sys
+import pickle
 from torch.utils.data import DataLoader
 
 sys.path.insert(0, os.path.join(
     os.path.dirname(os.path.realpath(__file__)), "../../"))
 
+from deep_audio_features.models.cnn import load_cnn
 from deep_audio_features.bin.config import EPOCHS, CNN_BOOLEAN, VARIABLES_FOLDER, ZERO_PAD, \
     FORCE_SIZE, SPECTOGRAM_SIZE, FEATURE_EXTRACTION_METHOD, OVERSAMPLING, \
     FUSED_SPECT, BATCH_SIZE
@@ -53,10 +55,11 @@ def transfer_learning(model=None, folders=None, strategy=0,
     # and load it to 'cpu' to get some free GPU for Dataloaders
     if isinstance(model, str):
         print('Loading model...')
-        model = torch.load(model, map_location='cpu')
+        model = load_cnn(model)
     else:
         print('Model already loaded...\nMoving it to CPU...')
-        model.to('cpu')
+
+    model.to('cpu')
 
     # Get max_seq_length from the model
     max_seq_length = model.max_sequence_length

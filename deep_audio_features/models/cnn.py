@@ -1,5 +1,7 @@
 import torch.nn as nn
-import sys, os
+import sys
+import os
+import pickle
 sys.path.insert(0, os.path.join(
     os.path.dirname(os.path.realpath(__file__)), "../../"))
 from deep_audio_features.bin.config import SPECTOGRAM_SIZE
@@ -17,6 +19,7 @@ class CNN1(nn.Module):
         self.type = type
         self.num_cnn_layers = 4
         self.cnn_channels = 2
+        self.output_dim = output_dim
         self.height = height
         self.width = width
         self.first_channels = first_channels
@@ -97,3 +100,16 @@ class CNN1(nn.Module):
         kernels = (self.cnn_channels ** (self.num_cnn_layers - 1)) *\
             self.first_channels
         return kernels * height * width
+
+
+def load_cnn(model_path):
+    with open(model_path, "rb") as input_file:
+        model_params = pickle.load(input_file)
+
+    model = CNN1(height=model_params["height"], width=model_params["width"], output_dim=model_params["output_dim"],
+                 zero_pad=model_params["zero_pad"], spec_size=model_params["spec_size"], fuse=model_params["fuse"],
+                 type=model_params["type"])
+    model.max_sequence_length = model_params["max_sequence_length"]
+    model.load_state_dict(model_params["state_dict"])
+
+    return model
