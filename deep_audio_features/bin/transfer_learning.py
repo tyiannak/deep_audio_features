@@ -145,7 +145,8 @@ def transfer_learning(model=None, folders=None, strategy=0,
         VARIABLES_FOLDER, model_id)
     print(f"\nSaving model to: {model_id}\n")
     # Save model for later use
-    # torch.save(best_model, modelname)
+
+    best_model = best_model.to("cpu")
 
     model_params = {
         "height": best_model.height, "width": best_model.width, "output_dim": best_model.output_dim,

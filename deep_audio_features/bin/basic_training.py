@@ -156,6 +156,7 @@ def train_model(folders=None, ofile=None, zero_pad=ZERO_PAD,
 
 
     print(f"\nSaving model to: {modelname}\n")
+    best_model = best_model.to("cpu")
     # Save model for later use
     model_params = {
         "height": height, "width": width, "output_dim": len(classes),
