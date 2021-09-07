@@ -15,11 +15,13 @@ import os
 import time
 import torch
 import sys
+import pickle
 from torch.utils.data import DataLoader
 
 sys.path.insert(0, os.path.join(
     os.path.dirname(os.path.realpath(__file__)), "../../"))
 
+from deep_audio_features.models.cnn import load_cnn
 from deep_audio_features.bin.config import EPOCHS, CNN_BOOLEAN, VARIABLES_FOLDER, ZERO_PAD, \
     FORCE_SIZE, SPECTOGRAM_SIZE, FEATURE_EXTRACTION_METHOD, OVERSAMPLING, \
     FUSED_SPECT, BATCH_SIZE
@@ -53,10 +55,11 @@ def transfer_learning(model=None, folders=None, strategy=0,
     # and load it to 'cpu' to get some free GPU for Dataloaders
     if isinstance(model, str):
         print('Loading model...')
-        model = torch.load(model, map_location='cpu')
+        model = load_cnn(model)
     else:
         print('Model already loaded...\nMoving it to CPU...')
-        model.to('cpu')
+
+    model.to('cpu')
 
     # Get max_seq_length from the model
     max_seq_length = model.max_sequence_length
@@ -142,7 +145,18 @@ def transfer_learning(model=None, folders=None, strategy=0,
         VARIABLES_FOLDER, model_id)
     print(f"\nSaving model to: {model_id}\n")
     # Save model for later use
-    torch.save(best_model, modelname)
+
+    best_model = best_model.to("cpu")
+
+    model_params = {
+        "height": best_model.height, "width": best_model.width, "output_dim": best_model.output_dim,
+        "zero_pad": best_model.zero_pad, "spec_size": best_model.spec_size, "fuse": best_model.fuse,
+        "validation_f1": valid_f1, "max_sequence_length": best_model.max_sequence_length,
+        "type": best_model.type, "state_dict": best_model.state_dict()
+    }
+
+    with open(modelname, "wb") as output_file:
+        pickle.dump(model_params, output_file)
 
 
 if __name__ == '__main__':

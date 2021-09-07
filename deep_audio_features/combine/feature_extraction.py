@@ -9,6 +9,7 @@ from pyAudioAnalysis import audioBasicIO as aIO
 import sys
 sys.path.insert(0, os.path.join(
     os.path.dirname(os.path.realpath(__file__)), "../../"))
+from deep_audio_features.models.cnn import load_cnn
 from deep_audio_features.utils.load_dataset import folders_mapping
 from deep_audio_features.utils import get_models
 from deep_audio_features.dataloading.dataloading import FeatureExtractorDataset
@@ -227,6 +228,8 @@ def extraction(input, modification, folders=True, show_hist=True):
             List of pca models used for each CNN.
     """
 
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
     print('-----------------------------------------------------------------')
     n_components = modification['n_components']
     filenames = []
@@ -282,12 +285,10 @@ def extraction(input, modification, folders=True, show_hist=True):
 
         for j, model_path in enumerate(model_paths):
             print('--> Extracting features using model: {}'.format(model_path))
-            if torch.cuda.is_available():
-                model = copy.deepcopy(torch.load(model_path))
-            else:
-                model = copy.deepcopy(torch.load(
-                    model_path, map_location=torch.device('cpu')))
 
+            model = load_cnn(model_path)
+            model = copy.deepcopy(model)
+            model = model.to(device)
             model.type = 'feature_extractor'
 
             models.append(model)

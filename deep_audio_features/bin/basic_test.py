@@ -5,6 +5,7 @@ import sys, os
 sys.path.insert(0, os.path.join(
     os.path.dirname(os.path.realpath(__file__)), "../../"))
 from deep_audio_features.dataloading.dataloading import FeatureExtractorDataset
+from deep_audio_features.models.cnn import load_cnn
 from deep_audio_features.lib.training import test
 from deep_audio_features.utils.model_editing import drop_layers
 import deep_audio_features.bin.config
@@ -35,10 +36,7 @@ Returns:
     """
     device = "cuda" if torch.cuda.is_available() else "cpu"
     # Restore model
-    if device == "cpu":
-        model = torch.load(modelpath, map_location=torch.device('cpu'))
-    else:
-        model = torch.load(modelpath)
+    model = load_cnn(modelpath).to(device)
 
     max_seq_length = model.max_sequence_length
 

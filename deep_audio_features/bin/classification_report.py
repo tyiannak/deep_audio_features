@@ -1,18 +1,22 @@
 import argparse
 import os
-from utils import load_dataset
 import torch
+import sys
+sys.path.insert(0, os.path.join(
+    os.path.dirname(os.path.realpath(__file__)), "../../"))
 from torch.utils.data import DataLoader
-from dataloading.dataloading import FeatureExtractorDataset
-from lib.training import test
+from deep_audio_features.dataloading.dataloading import FeatureExtractorDataset
+from deep_audio_features.utils import load_dataset
+from deep_audio_features.lib.training import test
+from deep_audio_features.models.cnn import load_cnn
 from sklearn.metrics import classification_report
 import config
 
 
-def test_report(modelpath, folders, layers_dropped):
+def test_report(model_path, folders, layers_dropped):
 
+    model = load_cnn(model_path)
 
-    model = torch.load(modelpath)
     max_seq_length = model.max_sequence_length
     files_test, y_test = load_dataset.load(
         folders=folders, test=False, validation=False)
@@ -61,7 +65,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # Get arguments
-    model = args.model
+    model_path = args.model
     folders = args.input
 
     layers_dropped = int(args.layers)
@@ -75,4 +79,4 @@ if __name__ == '__main__':
             raise FileNotFoundError()
 
     # Test the model
-    test_report(model, folders, layers_dropped)
+    test_report(model_path, folders, layers_dropped)

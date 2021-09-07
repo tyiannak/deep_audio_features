@@ -13,6 +13,7 @@ model is saved in pkl folder (exact filename is printed after training)
 import argparse
 import os
 import time
+import pickle
 import torch
 from torch.utils.data import DataLoader
 import sys, os
@@ -155,8 +156,17 @@ def train_model(folders=None, ofile=None, zero_pad=ZERO_PAD,
 
 
     print(f"\nSaving model to: {modelname}\n")
+    best_model = best_model.to("cpu")
     # Save model for later use
-    torch.save(best_model, modelname)
+    model_params = {
+        "height": height, "width": width, "output_dim": len(classes),
+        "zero_pad": zero_pad, "spec_size": spec_size, "fuse": FUSED_SPECT,
+        "validation_f1": best_model_f1, "max_sequence_length": max_seq_length,
+        "type": best_model.type, "state_dict": best_model.state_dict()
+    }
+
+    with open(modelname, "wb") as output_file:
+        pickle.dump(model_params, output_file)
 
 
 if __name__ == '__main__':
