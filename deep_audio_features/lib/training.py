@@ -297,6 +297,7 @@ def test(model, dataloader, cnn=False, classifier=True):
     """
     # obtain the model's device ID
     device = next(model.parameters()).device
+    model.eval()
 
     correct = 0
     # Create empty array for storing predictions and labels
