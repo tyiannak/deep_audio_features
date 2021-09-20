@@ -10,7 +10,7 @@ from deep_audio_features.utils import load_dataset
 from deep_audio_features.lib.training import test
 from deep_audio_features.models.cnn import load_cnn
 from sklearn.metrics import classification_report
-import config
+from deep_audio_features.bin import config
 
 
 def test_report(model_path, folders, layers_dropped):
