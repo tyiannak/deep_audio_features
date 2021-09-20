@@ -208,7 +208,6 @@ class FeatureExtractorDataset(Dataset):
                 spec = spec.resize(spec_size)
                 spec = np.array(spec)
                 x_resized.append(spec)
-            print(spec.shape)
         return x_resized
 
     @staticmethod
