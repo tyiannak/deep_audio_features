@@ -153,7 +153,7 @@ class FeatureExtractorDataset(Dataset):
             print('--> Using zero padding with max_length = {}'.format(self.max_sequence_length))
         else:
             X = self.resize(spec_size)
-            print('--> Using resizing with new_size = {}'.format(spec_size))
+            print('--> Using resizing with new_size (height, width) = ({}, {})'.format(spec_size[1], spec_size[0]))
 
         X = np.asarray(X)
         self.X = torch.from_numpy(X).type('torch.FloatTensor')
@@ -199,7 +199,7 @@ class FeatureExtractorDataset(Dataset):
             spec_size = size
         else:
             spec_size = self.spec_size
-            
+
         X = self.features.copy()
         x_resized = []
         for x in X:
