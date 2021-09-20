@@ -110,8 +110,9 @@ class FeatureExtractorDataset(Dataset):
             if forced_size is None:
                 # Note: (size_0, size_1) is (width, height) since the
                 # Image.resize takes as input a (width, height) tuple.
-                # In that case, after the resized is performed, we end up
-                # with a (height, width) spectrogram
+                # In that case, after the resized is performed using this
+                # method, we end up with a (height, width) spectrogram
+                # (in terms of traditional numpy/matrix notation
                 size_0 = 140 if fuse else 128
                 size_1 = int(np.mean(spec_sizes))
 
