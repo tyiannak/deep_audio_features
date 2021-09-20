@@ -108,8 +108,9 @@ class FeatureExtractorDataset(Dataset):
                 self.plot_hist(spec_sizes, y)
 
             if forced_size is None:
-                size_0 = int(np.mean(spec_sizes))
-                size_1 = 140 if fuse else 128
+                size_0 = 140 if fuse else 128
+                size_1 = int(np.mean(spec_sizes))
+
                 self.spec_size = (size_0, size_1)
             else:
                 self.spec_size = forced_size
@@ -198,7 +199,7 @@ class FeatureExtractorDataset(Dataset):
             spec_size = size
         else:
             spec_size = self.spec_size
-
+            
         X = self.features.copy()
         x_resized = []
         for x in X:
@@ -207,6 +208,7 @@ class FeatureExtractorDataset(Dataset):
                 spec = spec.resize(spec_size)
                 spec = np.array(spec)
                 x_resized.append(spec)
+            print(spec.shape)
         return x_resized
 
     @staticmethod
