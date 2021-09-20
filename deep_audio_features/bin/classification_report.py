@@ -14,6 +14,9 @@ from deep_audio_features.bin import config
 
 
 def test_report(model_path, folders, layers_dropped):
+    """Warning: This function is not meant to run on a big amount of data,
+    due to batch_size = 1
+    """
 
     model = load_cnn(model_path)
 
