@@ -16,8 +16,9 @@ from deep_audio_features.bin import config
 
 
 def test_report(model_path, folders, layers_dropped):
-    """Warning: This function is not meant to run on a big amount of data,
-    due to batch_size = 1
+    """Warning: This function is using the file_system as a shared memory
+    in order to run on a big amount of data, since due to batch_size = 1,
+    the share strategy used in torch.multiprocessing results in memory errors
     """
 
     model = load_cnn(model_path)
