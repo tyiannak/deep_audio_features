@@ -108,8 +108,14 @@ class FeatureExtractorDataset(Dataset):
                 self.plot_hist(spec_sizes, y)
 
             if forced_size is None:
-                size_0 = int(np.mean(spec_sizes))
-                size_1 = 140 if fuse else 128
+                # Note: (size_0, size_1) is (width, height) since the
+                # Image.resize takes as input a (width, height) tuple.
+                # In that case, after the resized is performed using this
+                # method, we end up with a (height, width) spectrogram
+                # (in terms of traditional numpy/matrix notation
+                size_0 = 140 if fuse else 128
+                size_1 = int(np.mean(spec_sizes))
+
                 self.spec_size = (size_0, size_1)
             else:
                 self.spec_size = forced_size
@@ -152,7 +158,7 @@ class FeatureExtractorDataset(Dataset):
             print('--> Using zero padding with max_length = {}'.format(self.max_sequence_length))
         else:
             X = self.resize(spec_size)
-            print('--> Using resizing with new_size = {}'.format(spec_size))
+            print('--> Using resizing with new_size (height, width) = ({}, {})'.format(spec_size[1], spec_size[0]))
 
         X = np.asarray(X)
         self.X = torch.from_numpy(X).type('torch.FloatTensor')
@@ -193,7 +199,6 @@ class FeatureExtractorDataset(Dataset):
         return padded
 
     def resize(self, size=None):
-
         if size is not None:
             spec_size = size
         else:
@@ -204,6 +209,7 @@ class FeatureExtractorDataset(Dataset):
         for x in X:
             if x.shape[0] > 0:
                 spec = Image.fromarray(x)
+                # Note: Image.resize takes as input a (width, height) tuple
                 spec = spec.resize(spec_size)
                 spec = np.array(spec)
                 x_resized.append(spec)

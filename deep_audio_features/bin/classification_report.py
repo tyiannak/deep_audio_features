@@ -2,6 +2,8 @@ import argparse
 import os
 import torch
 import sys
+import torch.multiprocessing
+torch.multiprocessing.set_sharing_strategy('file_system')
 sys.path.insert(0, os.path.join(
     os.path.dirname(os.path.realpath(__file__)), "../../"))
 from torch.utils.data import DataLoader
@@ -10,10 +12,14 @@ from deep_audio_features.utils import load_dataset
 from deep_audio_features.lib.training import test
 from deep_audio_features.models.cnn import load_cnn
 from sklearn.metrics import classification_report
-import config
+from deep_audio_features.bin import config
 
 
 def test_report(model_path, folders, layers_dropped):
+    """Warning: This function is using the file_system as a shared memory
+    in order to run on a big amount of data, since due to batch_size = 1,
+    the share strategy used in torch.multiprocessing results in memory errors
+    """
 
     model = load_cnn(model_path)
 
