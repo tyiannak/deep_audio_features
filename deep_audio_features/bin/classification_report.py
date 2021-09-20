@@ -2,6 +2,8 @@ import argparse
 import os
 import torch
 import sys
+import torch.multiprocessing
+torch.multiprocessing.set_sharing_strategy('file_system')
 sys.path.insert(0, os.path.join(
     os.path.dirname(os.path.realpath(__file__)), "../../"))
 from torch.utils.data import DataLoader
