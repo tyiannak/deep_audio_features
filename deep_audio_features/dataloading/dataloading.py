@@ -108,6 +108,10 @@ class FeatureExtractorDataset(Dataset):
                 self.plot_hist(spec_sizes, y)
 
             if forced_size is None:
+                # Note: (size_0, size_1) is (width, height) since the
+                # Image.resize takes as input a (width, height) tuple.
+                # In that case, after the resized is performed, we end up
+                # with a (height, width) spectrogram
                 size_0 = 140 if fuse else 128
                 size_1 = int(np.mean(spec_sizes))
 
@@ -194,7 +198,6 @@ class FeatureExtractorDataset(Dataset):
         return padded
 
     def resize(self, size=None):
-
         if size is not None:
             spec_size = size
         else:
@@ -205,6 +208,7 @@ class FeatureExtractorDataset(Dataset):
         for x in X:
             if x.shape[0] > 0:
                 spec = Image.fromarray(x)
+                # Note: Image.resize takes as input a (width, height) tuple
                 spec = spec.resize(spec_size)
                 spec = np.array(spec)
                 x_resized.append(spec)
