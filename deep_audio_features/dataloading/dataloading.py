@@ -84,7 +84,7 @@ class FeatureExtractorDataset(Dataset):
             print("--> Applying segmentation to the input file. . .")
             sequence = features[0]
             sequence_length = spec_sizes[0]
-            segment_length = forced_size[0]
+            segment_length = forced_size[1]
             progress = 0
             segments = []
             while progress < sequence_length:
