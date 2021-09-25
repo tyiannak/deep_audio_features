@@ -89,7 +89,7 @@ class FeatureExtractorDataset(Dataset):
             segments = []
             while progress < sequence_length:
                 if progress + segment_length > sequence_length:
-                    segments.append(sequence[progress:-1])
+                    segments.append(sequence[progress:])
                 else:
                     segments.append(sequence[progress: progress + segment_length + 1])
 
