@@ -91,10 +91,9 @@ class FeatureExtractorDataset(Dataset):
                 if progress + segment_length > sequence_length:
                     segments.append(sequence[progress:])
                 else:
-                    segments.append(sequence[progress: progress + segment_length + 1])
-
-                progress = progress + segment_length
-
+                    segments.append(sequence[progress:
+                                             progress + segment_length])
+                progress += segment_length
             print(len(segments))
             self.features = segments
             self.spec_size = forced_size
