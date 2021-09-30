@@ -87,7 +87,7 @@ class FeatureExtractorDataset(Dataset):
             segment_length = forced_size[1] - 1
             progress = 0
             segments = []
-            while progress < sequence_length:
+            while progress < sequence_length - 1:
                 if progress + segment_length > sequence_length:
                     segments.append(sequence[progress:])
                 else:
