@@ -71,7 +71,7 @@ def get_melspectrogram(x=None, fs=None, n_fft=None, hop_length=None,
     spectrogram = librosa.feature.melspectrogram(y=x, sr=fs, n_fft=n_fft,
                                                  hop_length=hop_length)
     # Convert to MEL-Scale
-    spectrogram_dB = librosa.power_to_db(spectrogram)  # (n_mel,t)
+    spectrogram_dB = librosa.power_to_db(spectrogram, ref=np.max)  # (n_mel,t)
 
     if fuse:
         chroma = librosa.feature.chroma_stft(y=x, sr=fs, n_fft=n_fft,
