@@ -8,7 +8,7 @@ sys.path.insert(0, os.path.join(
 from deep_audio_features.bin import config
 import wave
 import contextlib
-
+from collections import Counter
 
 def load(folders=None, test_val=[0.2, 0.2], test=True, validation=True):
     """Loads a dataset from some folders.
@@ -51,12 +51,13 @@ def load(folders=None, test_val=[0.2, 0.2], test=True, validation=True):
 
     # Convert labels to int
     folder2idx, idx2folder = folders_mapping(folders=folders)
-    labels = list(map(lambda x: folder2idx[x], labels))
 
+    labels = list(map(lambda x: folder2idx[x], labels))
+    class_mapping = {name: idx2folder[name].split("/")[-1] for name in idx2folder}
     # Split
     if test is False and validation is False:
         # Use this data only to train
-        return filenames, labels
+        return filenames, labels, class_mapping
 
     # Get percentages
     test_p, val_p = test_val
@@ -80,7 +81,7 @@ def load(folders=None, test_val=[0.2, 0.2], test=True, validation=True):
 
     # If validation split is not needed return
     if validation is False:
-        return X_train_, y_train_, X_test, y_test
+        return X_train_, y_train_, X_test, y_test, class_mapping
 
     # If valuation is True split again
     sss = StratifiedShuffleSplit(n_splits=1, test_size=val_p, random_state=0)
@@ -94,7 +95,7 @@ def load(folders=None, test_val=[0.2, 0.2], test=True, validation=True):
         X_val.append(X_train_[idx])
         y_val.append(y_train_[idx])
 
-    return X_train, y_train, X_test, y_test, X_val, y_val
+    return X_train, y_train, X_test, y_test, X_val, y_val, class_mapping
 
 
 def compute_max_seq_len(reload=False, X=None, folders=None):

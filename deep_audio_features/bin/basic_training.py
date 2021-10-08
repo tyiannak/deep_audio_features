@@ -40,13 +40,14 @@ def train_model(folders=None, ofile=None, zero_pad=ZERO_PAD,
         raise FileNotFoundError()
 
     # Create classes
-    classes = [os.path.basename(f) for f in folders]
+    # classes = [os.path.basename(f) for f in folders]
 
     # Use data only for training and validation. Instead of using validation,
     # we just use test data. There is no difference.
-    files_train, y_train, files_eval, y_eval = load_dataset.load(
+    files_train, y_train, files_eval, y_eval, classes_mapping = load_dataset.load(
         folders=folders, test=True, validation=False)
 
+    print("Model class mapping: {}".format(classes_mapping))
     # Compute max sequence length
     max_seq_length = load_dataset.compute_max_seq_len(reload=False,
                                                       X=files_train+files_eval)
@@ -105,8 +106,9 @@ def train_model(folders=None, ofile=None, zero_pad=ZERO_PAD,
     else:
         height = spec_size[0]
         width = spec_size[1]
-    model = CNN1(height=height, width=width, output_dim=len(classes),
-                 zero_pad=zero_pad, spec_size=spec_size, fuse=FUSED_SPECT)
+    model = CNN1(height=height, width=width, classes_mapping=classes_mapping,
+                 output_dim=len(classes_mapping), zero_pad=zero_pad,
+                 spec_size=spec_size, fuse=FUSED_SPECT)
     model.to(device)
     # Add max_seq_length to model
     model.max_sequence_length = max_seq_length
@@ -159,7 +161,7 @@ def train_model(folders=None, ofile=None, zero_pad=ZERO_PAD,
     best_model = best_model.to("cpu")
     # Save model for later use
     model_params = {
-        "height": height, "width": width, "output_dim": len(classes),
+        "height": height, "width": width, "classes_mapping": classes_mapping, "output_dim": len(classes_mapping),
         "zero_pad": zero_pad, "spec_size": spec_size, "fuse": FUSED_SPECT,
         "validation_f1": best_model_f1, "max_sequence_length": max_seq_length,
         "type": best_model.type, "state_dict": best_model.state_dict()
