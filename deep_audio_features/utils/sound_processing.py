@@ -56,7 +56,8 @@ def get_features_mean_var(x=None):
     return np.ravel((mean, variance), order='F')  # (78,) -- 1darray
 
 
-def get_melspectrogram(x=None, fs=None, n_fft=None, hop_length=None, fuse=False):
+def get_melspectrogram(x=None, fs=None, n_fft=None, hop_length=None,
+                       fuse=False):
     """Returns a mel spectrogram."""
 
     if x is None:
@@ -75,7 +76,7 @@ def get_melspectrogram(x=None, fs=None, n_fft=None, hop_length=None, fuse=False)
     if fuse:
         chroma = librosa.feature.chroma_stft(y=x, sr=fs, n_fft=n_fft,
                                              hop_length=hop_length)
-        chroma_dB = librosa.power_to_db(chroma, ref=np.max)
+        chroma_dB = librosa.power_to_db(chroma)
         out = np.concatenate((spectrogram_dB.T, chroma_dB.T), axis=1)
     else:
         # Transpose to return (time,n_mel)

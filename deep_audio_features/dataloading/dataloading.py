@@ -4,12 +4,14 @@ from torch.utils.data import Dataset
 from imblearn.over_sampling import RandomOverSampler
 import matplotlib.pyplot as plt
 import sys, os
+
 sys.path.insert(0, os.path.join(
     os.path.dirname(os.path.realpath(__file__)), "../../"))
 from deep_audio_features.utils import sound_processing
 from tqdm import tqdm
 from PIL import Image
 import datetime
+from deep_audio_features.bin.config import WINDOW_LENGTH
 
 
 class FeatureExtractorDataset(Dataset):
@@ -54,56 +56,31 @@ class FeatureExtractorDataset(Dataset):
 
         # Depending on the extraction method get X
 
-        features = []
-        fss = []
-        print("--> Extracting spectrogram associated features. . .")
-        spec_sizes = []
-        for audio_file in tqdm(X):  # for each audio file
-            # load the signal
-            signal, fs = sound_processing.load_wav(audio_file)
-            # get the features:
-            if fe_method == "MEL_SPECTROGRAM":
-                feature = sound_processing.get_melspectrogram(signal,
-                                                              fs=fs, fuse=fuse)
-            else:
-                feature = sound_processing.get_mfcc_with_deltas(signal,
-                                                                fs=fs,
-                                                                fuse=fuse)
-
-            spec_sizes.append(feature.shape[0])
-
-            # append to list of features
-            features.append(feature)
-            fss.append(fs)
-        self.features = features
-
-        spec_sizes = np.asarray(spec_sizes)
-
-        if test_segmentation:
-            # NOTE: Applied only to 1 file input
-            print("--> Applying segmentation to the input file. . .")
-            sequence = features[0]
-            sequence_length = spec_sizes[0]
-            segment_length = forced_size[1]
-            progress = 0
-            segments = []
-            while progress < sequence_length:
-                if progress + segment_length > sequence_length:
-                    segments.append(sequence[progress:-1])
+        if not (test_segmentation):
+            features = []
+            fss = []
+            print("--> Extracting spectrogram associated features. . .")
+            spec_sizes = []
+            for audio_file in tqdm(X):  # for each audio file
+                # load the signal
+                signal, fs = sound_processing.load_wav(audio_file)
+                # get the features:
+                if fe_method == "MEL_SPECTROGRAM":
+                    feature = sound_processing.get_melspectrogram(signal,
+                                                                  fs=fs, fuse=fuse)
                 else:
-                    segments.append(sequence[progress: progress + segment_length + 1])
+                    feature = sound_processing.get_mfcc_with_deltas(signal,
+                                                                    fs=fs,
+                                                                    fuse=fuse)
 
-                progress = progress + segment_length
+                spec_sizes.append(feature.shape[0])
 
-            print(len(segments))
-            self.features = segments
-            self.spec_size = forced_size
+                # append to list of features
+                features.append(feature)
+                fss.append(fs)
+            self.features = features
 
-            self.y = torch.tensor(np.zeros(len(segments)), dtype=int)
-            lengths = np.array([len(x) for x in segments])
-            self.lengths = torch.tensor(lengths)
-
-        else:
+            spec_sizes = np.asarray(spec_sizes)
             if show_hist:
                 self.plot_hist(spec_sizes, y)
 
@@ -123,6 +100,35 @@ class FeatureExtractorDataset(Dataset):
             self.y = torch.tensor(y, dtype=int)
             # Get all lengths before zero padding
             lengths = np.array([len(x) for x in X])
+            self.lengths = torch.tensor(lengths)
+        else:
+            for audio_file in tqdm(X):  # for each audio file
+                # load the signal
+                signal, fs = sound_processing.load_wav(audio_file)
+            # NOTE: Applied only to 1 file input
+            print("--> Applying segmentation to the input file. . .")
+            segment_length = int((forced_size[1] - 1) * WINDOW_LENGTH * fs)
+            sequence_length = signal.shape[0]
+            progress = 0
+            segments = []
+            while progress < sequence_length:
+                if progress + segment_length > sequence_length:
+                    fill_data = sequence_length - progress
+                    empty_data = segment_length - fill_data
+                    feature = sound_processing.get_melspectrogram(
+                        np.pad(signal[progress:], (0, empty_data), 'constant'), fs=fs,
+                        fuse=fuse)
+                    segments.append(feature)
+                else:
+                    feature = sound_processing.get_melspectrogram(signal[progress:progress+segment_length],
+                                                                  fs=fs, fuse=fuse)
+
+                    segments.append(feature)
+                progress += segment_length
+            self.features = segments
+            self.spec_size = forced_size
+            self.y = torch.tensor(np.zeros(len(segments)), dtype=int)
+            lengths = np.array([len(x) for x in segments])
             self.lengths = torch.tensor(lengths)
 
         if not pure_features:
@@ -176,7 +182,7 @@ class FeatureExtractorDataset(Dataset):
 
         if self.fe_method == "MEL_SPECTROGRAM":
             max_length = self.max_sequence_length  # self.lengths.max()
-        else: # MFCCs
+        else:  # MFCCs
             max_length = self.lengths.max()
 
         feature_dim = X[0].shape[-1]
@@ -251,6 +257,3 @@ class FeatureExtractorDataset(Dataset):
         axs[1].legend()
         ct = datetime.datetime.now()
         plt.savefig(ct.strftime("%m_%d_%Y, %H:%M:%S") + ".png")
-
-
-
