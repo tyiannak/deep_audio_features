@@ -37,7 +37,7 @@ Returns:
     device = "cuda" if torch.cuda.is_available() else "cpu"
     # Restore model
     model = load_cnn(modelpath).to(device)
-
+    class_names = model.classes_mapping
     max_seq_length = model.max_sequence_length
 
 
@@ -48,7 +48,6 @@ Returns:
     # Apply layer drop
     model = drop_layers(model, layers_dropped)
     model.max_sequence_length = max_seq_length
-
 
     # print('Model:\n{}'.format(model))
 
@@ -80,7 +79,7 @@ Returns:
 
     if verbose:
         print("--> Unormalized posteriors:\n {}\n".format(posteriors))
-        print("--> Predictions:\n {}".format(y_pred))
+        print("--> Predictions:\n {}".format([class_names[yy] for yy in y_pred]))
 
     return y_pred, numpy.array(posteriors)
 
