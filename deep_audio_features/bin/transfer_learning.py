@@ -66,9 +66,10 @@ def transfer_learning(model=None, folders=None, strategy=0,
     print(f"Setting max sequence length: {max_seq_length}...")
 
     # Use data only for training and validation
-    files_train, y_train, files_eval, y_eval = load_dataset.load(
+    files_train, y_train, files_eval, y_eval, classes_mapping = load_dataset.load(
         folders=folders, test=True, validation=False)
 
+    print("New model class mapping: {}".format(classes_mapping))
     # ====== DATASETS =================================
     # Load sets
     if forced_size is None:
@@ -104,7 +105,7 @@ def transfer_learning(model=None, folders=None, strategy=0,
     # ======= MODEL =================================================
 
     # Finetune
-    model = fine_tune_model(model=model, output_dim=len(classes),
+    model = fine_tune_model(model=model, output_dim=len(classes_mapping),
                             strategy=strategy, deepcopy=True)
 
     # use GPU if available
@@ -149,9 +150,9 @@ def transfer_learning(model=None, folders=None, strategy=0,
     best_model = best_model.to("cpu")
 
     model_params = {
-        "height": best_model.height, "width": best_model.width, "output_dim": best_model.output_dim,
-        "zero_pad": best_model.zero_pad, "spec_size": best_model.spec_size, "fuse": best_model.fuse,
-        "validation_f1": valid_f1, "max_sequence_length": best_model.max_sequence_length,
+        "height": best_model.height, "width": best_model.width,  "classes_mapping": classes_mapping,
+        "output_dim": best_model.output_dim, "zero_pad": best_model.zero_pad, "spec_size": best_model.spec_size,
+        "fuse": best_model.fuse, "validation_f1": valid_f1, "max_sequence_length": best_model.max_sequence_length,
         "type": best_model.type, "state_dict": best_model.state_dict()
     }
 

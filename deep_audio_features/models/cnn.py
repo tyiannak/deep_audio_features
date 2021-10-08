@@ -8,11 +8,12 @@ from deep_audio_features.bin.config import SPECTOGRAM_SIZE
 
 
 class CNN1(nn.Module):
-    def __init__(self, height, width, output_dim=7, first_channels=32,
+    def __init__(self, height, width, classes_mapping, output_dim=7, first_channels=32,
                  kernel_size=5, stride=1, padding=2, zero_pad=False,
                  spec_size=SPECTOGRAM_SIZE,
                  fuse=False, type='classifier'):
         super(CNN1, self).__init__()
+        self.classes_mapping = classes_mapping
         self.zero_pad = zero_pad
         self.spec_size = spec_size
         self.fuse = fuse
@@ -105,9 +106,10 @@ class CNN1(nn.Module):
 def load_cnn(model_path):
     with open(model_path, "rb") as input_file:
         model_params = pickle.load(input_file)
-
-    model = CNN1(height=model_params["height"], width=model_params["width"], output_dim=model_params["output_dim"],
-                 zero_pad=model_params["zero_pad"], spec_size=model_params["spec_size"], fuse=model_params["fuse"],
+    print("Loaded model class mapping: {}".format(model_params["classes_mapping"]))
+    model = CNN1(height=model_params["height"], width=model_params["width"], classes_mapping=model_params["classes_mapping"],
+                 output_dim=model_params["output_dim"], zero_pad=model_params["zero_pad"],
+                 spec_size=model_params["spec_size"], fuse=model_params["fuse"],
                  type=model_params["type"])
     model.max_sequence_length = model_params["max_sequence_length"]
     model.load_state_dict(model_params["state_dict"])
