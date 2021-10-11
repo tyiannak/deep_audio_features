@@ -16,11 +16,11 @@ def load_wav(filename):
     return x, fs
 
 
-def get_mfcc(x, fs):
+def get_mfcc(x, fs, hop_length=HOP_LENGTH):
     """Return MFCC of a given file, opened using librosa library."""
     return librosa.feature.mfcc(x, fs, n_mfcc=13,
                                 win_length=int(WINDOW_LENGTH * fs),
-                                hop_length=int(HOP_LENGTH * fs))
+                                hop_length=int(hop_length * fs))
 
 
 def get_mfcc_with_deltas(wav, fs):

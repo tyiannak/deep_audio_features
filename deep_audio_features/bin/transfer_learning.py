@@ -55,7 +55,7 @@ def transfer_learning(model=None, folders=None, strategy=0,
     # and load it to 'cpu' to get some free GPU for Dataloaders
     if isinstance(model, str):
         print('Loading model...')
-        model = load_cnn(model)
+        model, hop_length, window_length = load_cnn(model)
     else:
         print('Model already loaded...\nMoving it to CPU...')
 
@@ -83,7 +83,8 @@ def transfer_learning(model=None, folders=None, strategy=0,
                                         max_sequence_length=max_seq_length,
                                         zero_pad=zero_pad,
                                         forced_size=spec_size,
-                                        fuse=FUSED_SPECT)
+                                        fuse=FUSED_SPECT,
+                                        hop_length=hop_length, window_length=window_length)
 
     eval_set = FeatureExtractorDataset(X=files_eval, y=y_eval,
                                        fe_method=FEATURE_EXTRACTION_METHOD,
@@ -91,7 +92,8 @@ def transfer_learning(model=None, folders=None, strategy=0,
                                        max_sequence_length=max_seq_length,
                                        zero_pad=zero_pad,
                                        forced_size=spec_size,
-                                       fuse=FUSED_SPECT)
+                                       fuse=FUSED_SPECT,
+                                       hop_length=hop_length, window_length=window_length)
 
     # Add dataloader
     train_loader = DataLoader(

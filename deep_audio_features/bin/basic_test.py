@@ -36,7 +36,8 @@ Returns:
     """
     device = "cuda" if torch.cuda.is_available() else "cpu"
     # Restore model
-    model = load_cnn(modelpath).to(device)
+    model, hop_length, window_length = load_cnn(modelpath)
+    model = model.to(device)
     class_names = model.classes_mapping
     max_seq_length = model.max_sequence_length
 
@@ -64,7 +65,8 @@ Returns:
                                        zero_pad=zero_pad,
                                        forced_size=spec_size,
                                        fuse=fuse, show_hist=False,
-                                       test_segmentation=test_segmentation)
+                                       test_segmentation=test_segmentation,
+                                       hop_length=hop_length, window_length=window_length)
 
     # Create test dataloader
     test_loader = DataLoader(dataset=test_set, batch_size=1,

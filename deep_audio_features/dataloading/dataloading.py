@@ -11,7 +11,7 @@ from deep_audio_features.utils import sound_processing
 from tqdm import tqdm
 from PIL import Image
 import datetime
-from deep_audio_features.bin.config import WINDOW_LENGTH
+from deep_audio_features.bin.config import WINDOW_LENGTH, HOP_LENGTH
 
 
 class FeatureExtractorDataset(Dataset):
@@ -20,7 +20,8 @@ class FeatureExtractorDataset(Dataset):
     def __init__(self, X, y, fe_method="MFCC",
                  oversampling=False, max_sequence_length=281,
                  zero_pad=False, forced_size=None, pure_features=False,
-                 fuse=False, show_hist=True, test_segmentation=False):
+                 fuse=False, show_hist=True, test_segmentation=False,
+                 window_length=WINDOW_LENGTH, hop_length=HOP_LENGTH):
         """Create all important variables for dataset tokenization
 
         Arguments:
@@ -66,8 +67,8 @@ class FeatureExtractorDataset(Dataset):
                 signal, fs = sound_processing.load_wav(audio_file)
                 # get the features:
                 if fe_method == "MEL_SPECTROGRAM":
-                    feature = sound_processing.get_melspectrogram(signal,
-                                                                  fs=fs, fuse=fuse)
+                    feature = sound_processing.get_melspectrogram(
+                        signal, fs=fs, n_fft=int(window_length * fs), hop_length=int(hop_length * fs), fuse=fuse)
                 else:
                     feature = sound_processing.get_mfcc_with_deltas(signal,
                                                                     fs=fs,
@@ -107,7 +108,7 @@ class FeatureExtractorDataset(Dataset):
                 signal, fs = sound_processing.load_wav(audio_file)
             # NOTE: Applied only to 1 file input
             print("--> Applying segmentation to the input file. . .")
-            segment_length = int((forced_size[1] - 1) * WINDOW_LENGTH * fs)
+            segment_length = int((forced_size[1] - 1) * window_length * fs)
             sequence_length = signal.shape[0]
             progress = 0
             segments = []
@@ -116,12 +117,13 @@ class FeatureExtractorDataset(Dataset):
                     fill_data = sequence_length - progress
                     empty_data = segment_length - fill_data
                     feature = sound_processing.get_melspectrogram(
-                        np.pad(signal[progress:], (0, empty_data), 'constant'), fs=fs,
-                        fuse=fuse)
+                        np.pad(signal[progress:], (0, empty_data), 'constant'),
+                        fs=fs, n_fft=int(window_length * fs), hop_length=int(hop_length * fs), fuse=fuse)
                     segments.append(feature)
                 else:
-                    feature = sound_processing.get_melspectrogram(signal[progress:progress+segment_length],
-                                                                  fs=fs, fuse=fuse)
+                    feature = sound_processing.get_melspectrogram(
+                        signal[progress:progress+segment_length],
+                        fs=fs, n_fft=int(window_length * fs), hop_length=int(hop_length * fs), fuse=fuse)
 
                     segments.append(feature)
                 progress += segment_length
