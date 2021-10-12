@@ -274,7 +274,8 @@ def extraction(input, modification, folders=True, show_hist=True):
                                        fe_method=
                                        config.FEATURE_EXTRACTION_METHOD,
                                        oversampling=config.OVERSAMPLING,
-                                       pure_features=True, show_hist=show_hist)
+                                       pure_features=True, show_hist=show_hist,
+                                       hop_length=hop_length, window_length=window_length)
 
         models = []
         nn_features = []
@@ -286,7 +287,7 @@ def extraction(input, modification, folders=True, show_hist=True):
         for j, model_path in enumerate(model_paths):
             print('--> Extracting features using model: {}'.format(model_path))
 
-            model = load_cnn(model_path)
+            model, hop_length, window_length = load_cnn(model_path)
             model = copy.deepcopy(model)
             model = model.to(device)
             model.type = 'feature_extractor'

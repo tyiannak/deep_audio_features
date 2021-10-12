@@ -114,4 +114,4 @@ def load_cnn(model_path):
     model.max_sequence_length = model_params["max_sequence_length"]
     model.load_state_dict(model_params["state_dict"])
 
-    return model
+    return model, model_params["hop_length"], model_params["window_length"]

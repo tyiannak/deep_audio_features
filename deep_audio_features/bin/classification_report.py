@@ -21,7 +21,7 @@ def test_report(model_path, folders, layers_dropped):
     the share strategy used in torch.multiprocessing results in memory errors
     """
 
-    model = load_cnn(model_path)
+    model, hop_length, window_length = load_cnn(model_path)
 
     max_seq_length = model.max_sequence_length
     files_test, y_test = load_dataset.load(
@@ -39,7 +39,8 @@ def test_report(model_path, folders, layers_dropped):
                                         max_sequence_length=max_seq_length,
                                         zero_pad=zero_pad,
                                         forced_size=spec_size,
-                                        fuse=model.fuse)
+                                        fuse=model.fuse,
+                                        hop_length=hop_length, window_length=window_length)
 
     test_loader = DataLoader(test_set, batch_size=1,
                               num_workers=4, drop_last=True, shuffle=True)
