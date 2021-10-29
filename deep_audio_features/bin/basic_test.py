@@ -81,7 +81,8 @@ Returns:
 
     if verbose:
         print("--> Unormalized posteriors:\n {}\n".format(posteriors))
-        print("--> Predictions:\n {}".format([class_names[yy] for yy in y_pred]))
+        if layers_dropped == 0:
+            print("--> Predictions:\n {}".format([class_names[yy] for yy in y_pred]))
 
     return y_pred, numpy.array(posteriors)
 
