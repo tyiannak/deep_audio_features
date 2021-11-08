@@ -1,15 +1,9 @@
 import argparse
-import torch
-from torch.utils.data import DataLoader
 import sys, os
 sys.path.insert(0, os.path.join(
     os.path.dirname(os.path.realpath(__file__)), "../../"))
-from deep_audio_features.dataloading.dataloading import FeatureExtractorDataset
-from deep_audio_features.lib.training import test
-from deep_audio_features.utils.model_editing import drop_layers
+
 from deep_audio_features.bin.basic_test import test_model
-import deep_audio_features.bin.config
-import os
 import glob
 import numpy as np
 import pickle
@@ -23,10 +17,7 @@ def load_models(models_path):
     return models
 
 
-def get_meta_features(audio_file, list_of_models):
-    # TODO add other layers
-    layers_dropped = 0
-
+def get_meta_features(audio_file, list_of_models, layers_dropped=0, verbose=True):
     feature_names = []
     features_temporal = []
     features = np.array([])
@@ -35,10 +26,10 @@ def get_meta_features(audio_file, list_of_models):
                              ifile=audio_file,
                              layers_dropped=layers_dropped,
                              test_segmentation=True,
-                             verbose=True)
+                             verbose=verbose)
         # long-term average the posteriors
         # (along different CNN segment-decisions)
-        soft_average = np.mean(soft, axis=0)
+        soft_average = np.mean(soft, axis=0).ravel()
 
         features = np.concatenate([features, soft_average])
         feature_names += [f'{os.path.basename(m).replace(".pt", "")}_{i}'
@@ -50,7 +41,7 @@ def get_meta_features(audio_file, list_of_models):
     return features, features_temporal, feature_names
 
 
-def compile_deep_database(data_folder, models_folder, db_path):
+def compile_deep_database(data_folder, models_folder, db_path, verbose=True, layers_dropped=0):
     audio_files = glob.glob(os.path.join(data_folder, '*.wav'))
 
     models = load_models(models_folder)
@@ -58,7 +49,7 @@ def compile_deep_database(data_folder, models_folder, db_path):
     all_features = []
     all_features_temporal = []
     for a in audio_files:
-        f, f_temporal, f_names = get_meta_features(a, models)
+        f, f_temporal, f_names = get_meta_features(a, models, verbose=verbose, layers_dropped=layers_dropped)
         all_features.append(f)
         all_features_temporal.append(np.concatenate(f_temporal, axis=1).transpose())
     all_features = np.array(all_features)
@@ -79,8 +70,18 @@ if __name__ == '__main__':
                         type=str, help='Dir of models')
     parser.add_argument('-i', '--input', required=True,
                         type=str, help='Input file for testing')
+    parser.add_argument('-d', '--db_path', required=False, default='db',
+                        type=str, help='File to store the database')
+    parser.add_argument('-v', '--verbose', action='store_true',
+                        help='Print model predictions')
+    parser.add_argument('-l', '--layers_dropped', required=False,
+                        type=int, help='Number of final layers to drop from the models')
     args = parser.parse_args()
+
     model_dir = args.model_dir
     ifile = args.input
+    db = args.db_path
+    v = args.verbose
+    ld = args.layers_dropped
 
-    compile_deep_database(ifile, model_dir, "db")
+    compile_deep_database(ifile, model_dir, db, verbose=v, layers_dropped=ld)
