@@ -2,7 +2,7 @@
 # deep_audio_features: training an using CNNs on audio classification tasks 
 ## 1 About
 `deep_audio_features` is a Python library for training Convolutional Neural Netowrks 
-as audio classifiers. The library provides a wrappers to pytorch for training CNNs
+as audio classifiers. The library provides wrappers to pytorch for training CNNs
 on audio classification tasks, and using the CNNs as feature extractors. 
 
 ## 2 Installation
