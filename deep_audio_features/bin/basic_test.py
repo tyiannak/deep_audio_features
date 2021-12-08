@@ -82,7 +82,18 @@ Returns:
     if verbose:
         print("--> Unormalized posteriors:\n {}\n".format(posteriors))
         if layers_dropped == 0:
-            print("--> Predictions:\n {}".format([class_names[yy] for yy in y_pred]))
+            print("--> Predictions:\n {}".format([class_names[yy] 
+                                                  for yy in y_pred]))
+        # show aggregated posteriors:
+        posts = numpy.array(posteriors)
+        probs = []
+        for w in range(posts.shape[0]): # for each segment:
+            p = numpy.exp(posts[w, :]) / numpy.sum(numpy.exp(posts[w, :]))
+            probs.append(p)
+        probs = numpy.array(probs)
+        p_aggregated = probs.mean(axis = 0)
+        for ip in numpy.argsort(p_aggregated)[::-1]:
+            print(f"{class_names[ip]}\t{p_aggregated[ip]:.2f}")
 
     return y_pred, numpy.array(posteriors)
 
