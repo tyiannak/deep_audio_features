@@ -124,7 +124,7 @@ def compute_max_seq_len(reload=False, X=None, folders=None):
                           (config.WINDOW_LENGTH - config.HOP_LENGTH)) / \
                          (config.HOP_LENGTH) + 1)
             lengths.append(length)
-    max_seq = np.max(lengths)
+    max_seq = int(np.mean(lengths)
     print(f"Max sequence length in dataset: {max_seq}")
     return max_seq
 
