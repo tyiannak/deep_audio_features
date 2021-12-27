@@ -140,6 +140,9 @@ class ConvAutoEncoder(nn.Module):
         self.kernel_size = kernel_size
         self.stride = stride
         self.representation_dim = representation_dim
+        self.zero_pad = zero_pad
+        self.spec_size = spec_size
+        self.fuse = fuse
 
         self.encoder = ConvEncoder(
             height, width, representation_dim=representation_dim,
@@ -163,3 +166,19 @@ class ConvAutoEncoder(nn.Module):
         kernels = (self.cnn_channels ** (self.num_cnn_layers - 1)) * \
                   self.first_channels
         return kernels * height * width
+
+
+def load_convAE(model_path):
+    with open(model_path, "rb") as input_file:
+        model_params = pickle.load(input_file)
+    print("Loaded model representation dimension: {}".format(
+        model_params["representation_dim"]))
+    model = ConvAutoEncoder(
+        height=model_params["height"], width=model_params["width"],
+        representation_dim=model_params["representation_dim"],
+        zero_pad=model_params["zero_pad"],
+        spec_size=model_params["spec_size"], fuse=model_params["fuse"])
+    model.max_sequence_length = model_params["max_sequence_length"]
+    model.load_state_dict(model_params["state_dict"])
+
+    return model, model_params["hop_length"], model_params["window_length"]
