@@ -171,7 +171,7 @@ class ConvAutoEncoder(nn.Module):
 def load_convAE(model_path):
     with open(model_path, "rb") as input_file:
         model_params = pickle.load(input_file)
-    print("Loaded model representation dimension: {}".format(
+    print("Loaded model representation channels: {}".format(
         model_params["representation_channels"]))
     model = ConvAutoEncoder(
         height=model_params["height"], width=model_params["width"],

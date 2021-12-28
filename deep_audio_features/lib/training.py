@@ -323,7 +323,7 @@ def test(model, dataloader, cnn=False, classifier=True, task="classification"):
     correct = 0
     # Create empty array for storing predictions and labels
     posteriors = []
-    y_pred = []
+    preds = []
     y_true = []
     for index, batch in enumerate(dataloader, 1):
         # Split each batch[index]
@@ -331,34 +331,40 @@ def test(model, dataloader, cnn=False, classifier=True, task="classification"):
 
         # Transfer to device
         inputs = inputs.to(device)
-        labels = labels.type('torch.LongTensor').to(device)
-        # print(f'\n labels: {labels}')
+        if task == "classification":
+            labels = labels.type('torch.LongTensor').to(device)
 
-        # Forward through the network
-        if cnn is False:
-            out = model.forward(inputs, lengths)
+            # Forward through the network
+            if cnn is False:
+                out = model.forward(inputs, lengths)
+            else:
+                # Add a new axis for CNN filter features, [z-axis]
+                inputs = inputs[:, np.newaxis, :, :]
+                out = model.forward(inputs)
+
+            if classifier is False:
+                posteriors.append(out.cpu().detach().numpy())
+                preds.append(None)
+                y_true.append(None)
+            else:
+                # Predict the one with the maximum probability
+                predictions = torch.argmax(out, -1)
+                # Save predictions
+                preds.append(predictions.cpu().data.numpy())
+                y_true.append(labels.cpu().data.numpy())
+                posteriors.append(out[0].cpu().detach().numpy())
+
+            if classifier is True:
+                # Get metrics
+                preds = np.array(preds).flatten()
+                y_true = np.array(y_true).flatten()
+
         else:
-            # Add a new axis for CNN filter features, [z-axis]
             inputs = inputs[:, np.newaxis, :, :]
-            out = model.forward(inputs)
+            _, representation = model.forward(inputs)
+            preds.append(representation.cpu().data.numpy())
 
-        if classifier is False:
-            posteriors.append(out.cpu().detach().numpy())
-            y_pred.append(None)
-            y_true.append(None)
-        else:
-            # Predict the one with the maximum probability
-            predictions = torch.argmax(out, -1)
-            # Save predictions
-            y_pred.append(predictions.cpu().data.numpy())
-            y_true.append(labels.cpu().data.numpy())
-            posteriors.append(out[0].cpu().detach().numpy())
-    if classifier is True:
-        # Get metrics
-        y_pred = np.array(y_pred).flatten()
-        y_true = np.array(y_true).flatten()
-
-    return posteriors, y_pred, y_true
+    return posteriors, preds, y_true
 
 
 def progress(loss, epoch, batch, batch_size, dataset_size):
