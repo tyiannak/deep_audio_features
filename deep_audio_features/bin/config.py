@@ -3,6 +3,7 @@
 # Training
 EPOCHS = 500
 CNN_BOOLEAN = True
+REPRESENTATION_CHANNELS = 10 # embedding dim is 8 x num_channels
 
 # .pkl files
 VARIABLES_FOLDER = "pkl/"

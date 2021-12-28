@@ -8,7 +8,7 @@ from deep_audio_features.bin.config import SPECTOGRAM_SIZE
 
 
 class ConvEncoder(nn.Module):
-    def __init__(self, height, width, representation_dim=100, first_channels=32,
+    def __init__(self, height, width, representation_channels=100, first_channels=32,
                  kernel_size=5, stride=1, padding=2):
         super(ConvEncoder, self).__init__()
 
@@ -19,7 +19,7 @@ class ConvEncoder(nn.Module):
         self.first_channels = first_channels
         self.kernel_size = kernel_size
         self.stride = stride
-        self.representation_dim = representation_dim
+        self.representation_channels = representation_channels
 
         self.conv1 = nn.Sequential(
             nn.Conv2d(1, first_channels, 3, stride=stride, padding=padding),
@@ -40,7 +40,7 @@ class ConvEncoder(nn.Module):
         self.pool3 = nn.MaxPool2d(kernel_size=2, return_indices=True)
 
         self.conv4 = nn.Conv2d(
-            (self.cnn_channels ** 2) * first_channels, representation_dim, 5, stride=stride, padding=padding)
+            (self.cnn_channels ** 2) * first_channels, representation_channels, 5, stride=stride, padding=padding)
         self.pool4 = nn.MaxPool2d(kernel_size=2, return_indices=True)
 
     def forward(self, x):
@@ -68,7 +68,7 @@ class ConvEncoder(nn.Module):
 
 
 class ConvDecoder(nn.Module):
-    def __init__(self, height, width, representation_dim=100, first_channels=32,
+    def __init__(self, height, width, representation_channels=100, first_channels=32,
                  kernel_size=5, stride=1, padding=2):
         super(ConvDecoder, self).__init__()
 
@@ -79,12 +79,12 @@ class ConvDecoder(nn.Module):
         self.first_channels = first_channels
         self.kernel_size = kernel_size
         self.stride = stride
-        self.representation_dim = representation_dim
+        self.representation_channels = representation_channels
 
         self.unpool0 = nn.MaxUnpool2d(kernel_size=2)
 
         self.unconv1 = nn.Sequential(
-            nn.ConvTranspose2d(representation_dim, (self.cnn_channels ** 2) * first_channels, 5,
+            nn.ConvTranspose2d(representation_channels, (self.cnn_channels ** 2) * first_channels, 5,
                            stride=stride, padding=padding),
             nn.BatchNorm2d((self.cnn_channels ** 2) * first_channels),
             nn.GELU())
@@ -127,7 +127,7 @@ class ConvDecoder(nn.Module):
 
 
 class ConvAutoEncoder(nn.Module):
-    def __init__(self, height, width, representation_dim=10, first_channels=32,
+    def __init__(self, height, width, representation_channels=10, first_channels=32,
                  kernel_size=3, stride=1, padding=2, zero_pad=False,
                  spec_size=SPECTOGRAM_SIZE, fuse=False):
         super(ConvAutoEncoder, self).__init__()
@@ -139,17 +139,17 @@ class ConvAutoEncoder(nn.Module):
         self.first_channels = first_channels
         self.kernel_size = kernel_size
         self.stride = stride
-        self.representation_dim = representation_dim
+        self.representation_channels = representation_channels
         self.zero_pad = zero_pad
         self.spec_size = spec_size
         self.fuse = fuse
 
         self.encoder = ConvEncoder(
-            height, width, representation_dim=representation_dim,
+            height, width, representation_channels=representation_channels,
             first_channels=first_channels, kernel_size=kernel_size,
             stride=stride, padding=padding)
         self.decoder = ConvDecoder(
-            height, width, representation_dim=representation_dim,
+            height, width, representation_channels=representation_channels,
             first_channels=first_channels, kernel_size=kernel_size,
             stride=stride, padding=padding)
 
@@ -172,10 +172,10 @@ def load_convAE(model_path):
     with open(model_path, "rb") as input_file:
         model_params = pickle.load(input_file)
     print("Loaded model representation dimension: {}".format(
-        model_params["representation_dim"]))
+        model_params["representation_channels"]))
     model = ConvAutoEncoder(
         height=model_params["height"], width=model_params["width"],
-        representation_dim=model_params["representation_dim"],
+        representation_channels=model_params["representation_channels"],
         zero_pad=model_params["zero_pad"],
         spec_size=model_params["spec_size"], fuse=model_params["fuse"])
     model.max_sequence_length = model_params["max_sequence_length"]
