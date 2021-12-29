@@ -14,7 +14,7 @@ import deep_audio_features.bin.config
 import numpy
 
 
-def test_model(modelpath, ifile, layers_dropped,
+def test_model(modelpath, ifile, layers_dropped=0,
                test_segmentation=False, verbose=True):
     """Loads a model and predicts each classes probability
 

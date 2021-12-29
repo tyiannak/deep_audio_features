@@ -24,19 +24,19 @@ class ConvEncoder(nn.Module):
         self.conv1 = nn.Sequential(
             nn.Conv2d(1, first_channels, kernel_size, stride=stride, padding=padding),
             nn.BatchNorm2d(first_channels),
-            nn.GELU())
+            nn.LeakyReLU())
         self.pool1 = nn.MaxPool2d(kernel_size=2, return_indices=True)
 
         self.conv2 = nn.Sequential(
             nn.Conv2d(first_channels, self.cnn_channels * first_channels, kernel_size, stride=stride, padding=padding),
             nn.BatchNorm2d(self.cnn_channels * first_channels),
-            nn.GELU())
+            nn.LeakyReLU())
         self.pool2 = nn.MaxPool2d(kernel_size=2, return_indices=True)
 
         self.conv3 = nn.Sequential(
             nn.Conv2d(self.cnn_channels * first_channels, (self.cnn_channels ** 2) * first_channels, kernel_size, stride=stride, padding=padding),
             nn.BatchNorm2d((self.cnn_channels ** 2) * first_channels),
-            nn.GELU())
+            nn.LeakyReLU())
         self.pool3 = nn.MaxPool2d(kernel_size=2, return_indices=True)
 
         self.conv4 = nn.Conv2d(
@@ -87,21 +87,21 @@ class ConvDecoder(nn.Module):
             nn.ConvTranspose2d(representation_channels, (self.cnn_channels ** 2) * first_channels, kernel_size,
                            stride=stride, padding=padding),
             nn.BatchNorm2d((self.cnn_channels ** 2) * first_channels),
-            nn.GELU())
+            nn.LeakyReLU())
         self.unpool1 = nn.MaxUnpool2d(kernel_size=2)
 
         self.unconv2 = nn.Sequential(
             nn.ConvTranspose2d((self.cnn_channels ** 2) * first_channels, self.cnn_channels * first_channels, kernel_size,
                            stride=stride, padding=padding),
             nn.BatchNorm2d(self.cnn_channels * first_channels),
-            nn.GELU())
+            nn.LeakyReLU())
         self. unpool2 = nn.MaxUnpool2d(kernel_size=2)
 
         self.unconv3 = nn.Sequential(
             nn.ConvTranspose2d(self.cnn_channels * first_channels, first_channels, kernel_size, stride=stride,
                            padding=padding),
             nn.BatchNorm2d(first_channels),
-            nn.GELU())
+            nn.LeakyReLU())
         self.unpool3 = nn.MaxUnpool2d(kernel_size=2)
 
         self.unconv4 = nn.ConvTranspose2d(first_channels, 1, kernel_size, stride=stride, padding=padding)
@@ -128,7 +128,7 @@ class ConvDecoder(nn.Module):
 
 class ConvAutoEncoder(nn.Module):
     def __init__(self, height, width, representation_channels=10, first_channels=32,
-                 kernel_size=3, stride=1, padding=2, zero_pad=False,
+                 kernel_size=5, stride=1, padding=2, zero_pad=False,
                  spec_size=SPECTOGRAM_SIZE, fuse=False):
         super(ConvAutoEncoder, self).__init__()
 
