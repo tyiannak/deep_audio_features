@@ -9,7 +9,7 @@ from deep_audio_features.bin.config import SPECTOGRAM_SIZE
 
 class ConvEncoder(nn.Module):
     def __init__(self, height, width, representation_channels=100, first_channels=32,
-                 kernel_size=5, stride=1, padding=2):
+                 kernel_size=3, stride=1, padding=2):
         super(ConvEncoder, self).__init__()
 
         self.num_cnn_layers = 4
@@ -22,25 +22,25 @@ class ConvEncoder(nn.Module):
         self.representation_channels = representation_channels
 
         self.conv1 = nn.Sequential(
-            nn.Conv2d(1, first_channels, 3, stride=stride, padding=padding),
+            nn.Conv2d(1, first_channels, kernel_size, stride=stride, padding=padding),
             nn.BatchNorm2d(first_channels),
             nn.GELU())
         self.pool1 = nn.MaxPool2d(kernel_size=2, return_indices=True)
 
         self.conv2 = nn.Sequential(
-            nn.Conv2d(first_channels, self.cnn_channels * first_channels, 3, stride=stride, padding=padding),
+            nn.Conv2d(first_channels, self.cnn_channels * first_channels, kernel_size, stride=stride, padding=padding),
             nn.BatchNorm2d(self.cnn_channels * first_channels),
             nn.GELU())
         self.pool2 = nn.MaxPool2d(kernel_size=2, return_indices=True)
 
         self.conv3 = nn.Sequential(
-            nn.Conv2d(self.cnn_channels * first_channels, (self.cnn_channels ** 2) * first_channels, 5, stride=stride, padding=padding),
+            nn.Conv2d(self.cnn_channels * first_channels, (self.cnn_channels ** 2) * first_channels, kernel_size, stride=stride, padding=padding),
             nn.BatchNorm2d((self.cnn_channels ** 2) * first_channels),
             nn.GELU())
         self.pool3 = nn.MaxPool2d(kernel_size=2, return_indices=True)
 
         self.conv4 = nn.Conv2d(
-            (self.cnn_channels ** 2) * first_channels, representation_channels, 5, stride=stride, padding=padding)
+            (self.cnn_channels ** 2) * first_channels, representation_channels, kernel_size, stride=stride, padding=padding)
         self.pool4 = nn.MaxPool2d(kernel_size=2, return_indices=True)
 
     def forward(self, x):
@@ -69,7 +69,7 @@ class ConvEncoder(nn.Module):
 
 class ConvDecoder(nn.Module):
     def __init__(self, height, width, representation_channels=100, first_channels=32,
-                 kernel_size=5, stride=1, padding=2):
+                 kernel_size=3, stride=1, padding=2):
         super(ConvDecoder, self).__init__()
 
         self.num_cnn_layers = 4
@@ -84,27 +84,27 @@ class ConvDecoder(nn.Module):
         self.unpool0 = nn.MaxUnpool2d(kernel_size=2)
 
         self.unconv1 = nn.Sequential(
-            nn.ConvTranspose2d(representation_channels, (self.cnn_channels ** 2) * first_channels, 5,
+            nn.ConvTranspose2d(representation_channels, (self.cnn_channels ** 2) * first_channels, kernel_size,
                            stride=stride, padding=padding),
             nn.BatchNorm2d((self.cnn_channels ** 2) * first_channels),
             nn.GELU())
         self.unpool1 = nn.MaxUnpool2d(kernel_size=2)
 
         self.unconv2 = nn.Sequential(
-            nn.ConvTranspose2d((self.cnn_channels ** 2) * first_channels, self.cnn_channels * first_channels, 5,
+            nn.ConvTranspose2d((self.cnn_channels ** 2) * first_channels, self.cnn_channels * first_channels, kernel_size,
                            stride=stride, padding=padding),
             nn.BatchNorm2d(self.cnn_channels * first_channels),
             nn.GELU())
         self. unpool2 = nn.MaxUnpool2d(kernel_size=2)
 
         self.unconv3 = nn.Sequential(
-            nn.ConvTranspose2d(self.cnn_channels * first_channels, first_channels, 3, stride=stride,
+            nn.ConvTranspose2d(self.cnn_channels * first_channels, first_channels, kernel_size, stride=stride,
                            padding=padding),
             nn.BatchNorm2d(first_channels),
             nn.GELU())
         self.unpool3 = nn.MaxUnpool2d(kernel_size=2)
 
-        self.unconv4 = nn.ConvTranspose2d(first_channels, 1, 3, stride=stride, padding=padding)
+        self.unconv4 = nn.ConvTranspose2d(first_channels, 1, kernel_size, stride=stride, padding=padding)
 
     def forward(self, x, pool_indices, pool_sizes):
         x = self.unpool0(x, pool_indices[0], output_size=pool_sizes[0])
