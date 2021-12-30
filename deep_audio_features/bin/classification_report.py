@@ -61,6 +61,8 @@ def test_report(model_path, folders, layers_dropped):
     cm = confusion_matrix(y_true, y_pred)
     print("Confusion matrix:\n {}".format(cm))
 
+    y_true = [class_mapping[y] for y in y_true]
+    y_pred = [class_mapping[y] for y in y_pred]
     report = classification_report(y_true, y_pred)
     print("Classification report: ")
     print(report)
