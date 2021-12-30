@@ -39,11 +39,12 @@ spectrogram representations from the respective sounds, trains and validates the
 trained model in `pkl/energy.pt`
 
 ### 3.2 Testing a CNN
-
+#### 3.2.1 Inference
+To perform inference for one file only, run:
 ```
 python3 deep_audio_features/bin/basic_test.py -m /path/to/model/ -i /path/to/file (-s)
 ```
-`-i` : select the folders  where the testing data will be loaded from.
+`-i` : select the file where the testing data will be loaded from.
 
 `-m` : select a model to apply testing.
 
@@ -58,6 +59,21 @@ The code above will use the CNN trained befre to classify an audio signal stored
 `d` stores the decision (class indices) and `p` the soft outputs of the classes. 
 If `layers_dropped` is positive, `d` is empty an `p` contains the outputs of the N-layers_dropped layer (N is the total number of layers in the CNN).
 E.g. if `layers_dropped`, `p` will contain the outputs of the last fully connected layer, before softmax.
+
+#### 3.2.2 Evaluate on new data
+To perform evaluation on different data, run:
+```
+python3 deep_audio_features/bin/classification_report.py -m /path/to/model/ -i /path/to/folder1 /path/to/folder2
+```
+`-i` : select the folders where the testing data will be loaded from.
+
+`-m` : select a model to apply testing.
+
+Or call the following function in Python:
+```python
+from deep_audio_features.bin import classification_report as creport
+creport.test_report("/path/to/model/", ["low","medium","high"], layers_dropped=0)
+```
 
 ### 3.3 Transfer learning 
 
