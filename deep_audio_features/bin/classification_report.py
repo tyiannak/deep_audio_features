@@ -2,6 +2,7 @@ import argparse
 import os
 import torch
 import sys
+import pickle
 import torch.multiprocessing
 torch.multiprocessing.set_sharing_strategy('file_system')
 sys.path.insert(0, os.path.join(
@@ -20,12 +21,16 @@ def test_report(model_path, folders, layers_dropped):
     in order to run on a big amount of data, since due to batch_size = 1,
     the share strategy used in torch.multiprocessing results in memory errors
     """
+    with open(model_path, "rb") as input_file:
+        model_params = pickle.load(input_file)
+    class_mapping = model_params["classes_mapping"]
 
     model, hop_length, window_length = load_cnn(model_path)
 
     max_seq_length = model.max_sequence_length
-    files_test, y_test = load_dataset.load(
-        folders=folders, test=False, validation=False)
+    files_test, y_test, class_mapping = load_dataset.load(
+        folders=folders, test=False,
+        validation=False, class_mapping=class_mapping)
 
     spec_size = model.spec_size
     zero_pad = model.zero_pad

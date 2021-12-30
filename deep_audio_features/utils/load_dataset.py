@@ -10,7 +10,9 @@ import wave
 import contextlib
 from collections import Counter
 
-def load(folders=None, test_val=[0.2, 0.2], test=True, validation=True):
+
+def load(folders=None, test_val=[0.2, 0.2],
+         test=True, validation=True, class_mapping=None):
     """Loads a dataset from some folders.
 
     Arguments
@@ -42,6 +44,7 @@ def load(folders=None, test_val=[0.2, 0.2], test=True, validation=True):
         raise AssertionError()
     filenames = []
     labels = []
+    folders = sorted(folders)
 
     # Match filenames with labels
     for folder in folders:
@@ -51,7 +54,13 @@ def load(folders=None, test_val=[0.2, 0.2], test=True, validation=True):
 
     # Convert labels to int
     folder2idx, idx2folder = folders_mapping(folders=folders)
-
+    if class_mapping:
+        for k, v in idx2folder.items():
+            for k_2, v_2 in class_mapping.items():
+                if v_2 in v:
+                    idx2folder[k_2] = v
+        folder2idx = {v: k for k, v in idx2folder.items()}
+    print(folder2idx)
     labels = list(map(lambda x: folder2idx[x], labels))
     class_mapping = {name: idx2folder[name].split("/")[-1] for name in idx2folder}
     # Split
@@ -125,8 +134,13 @@ def compute_max_seq_len(reload=False, X=None, folders=None):
                          (config.HOP_LENGTH) + 1)
             lengths.append(length)
     # instead of computing the overall maximum we use the 90% percentile
-    max_seq = int(np.percentile(lengths, 90))
+    max_seq = int(np.max(lengths))
     print(f"Max sequence length in dataset: {max_seq}")
+    mean_seq = int(np.mean(lengths))
+    print(f"Mean sequence length in dataset: {mean_seq}")
+    std_seq = int(np.std(lengths))
+    print(f"Std of sequence lengths in dataset: {std_seq}")
+
     return max_seq
 
 
