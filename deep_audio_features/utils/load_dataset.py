@@ -60,7 +60,7 @@ def load(folders=None, test_val=[0.2, 0.2],
                 if v_2 in v:
                     idx2folder[k_2] = v
         folder2idx = {v: k for k, v in idx2folder.items()}
-    print(folder2idx)
+    
     labels = list(map(lambda x: folder2idx[x], labels))
     class_mapping = {name: idx2folder[name].split("/")[-1] for name in idx2folder}
     # Split

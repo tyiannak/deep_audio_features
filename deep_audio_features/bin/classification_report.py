@@ -13,6 +13,7 @@ from deep_audio_features.utils import load_dataset
 from deep_audio_features.lib.training import test
 from deep_audio_features.models.cnn import load_cnn
 from sklearn.metrics import classification_report
+from sklearn.metrics import confusion_matrix
 from deep_audio_features.bin import config
 
 
@@ -56,6 +57,9 @@ def test_report(model_path, folders, layers_dropped):
     _, y_pred, y_true = test(model=model, dataloader=test_loader,
                        cnn=True,
                        classifier=True if layers_dropped == 0 else False)
+
+    cm = confusion_matrix(y_true, y_pred)
+    print("Confusion matrix:\n {}".format(cm))
 
     report = classification_report(y_true, y_pred)
     print("Classification report: ")
