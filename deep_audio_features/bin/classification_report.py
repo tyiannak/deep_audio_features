@@ -2,6 +2,7 @@ import argparse
 import os
 import torch
 import sys
+import pickle
 import torch.multiprocessing
 torch.multiprocessing.set_sharing_strategy('file_system')
 sys.path.insert(0, os.path.join(
@@ -12,6 +13,7 @@ from deep_audio_features.utils import load_dataset
 from deep_audio_features.lib.training import test
 from deep_audio_features.models.cnn import load_cnn
 from sklearn.metrics import classification_report
+from sklearn.metrics import confusion_matrix
 from deep_audio_features.bin import config
 
 
@@ -20,12 +22,16 @@ def test_report(model_path, folders, layers_dropped):
     in order to run on a big amount of data, since due to batch_size = 1,
     the share strategy used in torch.multiprocessing results in memory errors
     """
+    with open(model_path, "rb") as input_file:
+        model_params = pickle.load(input_file)
+    class_mapping = model_params["classes_mapping"]
 
     model, hop_length, window_length = load_cnn(model_path)
 
     max_seq_length = model.max_sequence_length
-    files_test, y_test = load_dataset.load(
-        folders=folders, test=False, validation=False)
+    files_test, y_test, class_mapping = load_dataset.load(
+        folders=folders, test=False,
+        validation=False, class_mapping=class_mapping)
 
     spec_size = model.spec_size
     zero_pad = model.zero_pad
@@ -52,6 +58,11 @@ def test_report(model_path, folders, layers_dropped):
                        cnn=True,
                        classifier=True if layers_dropped == 0 else False)
 
+    cm = confusion_matrix(y_true, y_pred)
+    print("Confusion matrix:\n {}".format(cm))
+
+    y_true = [class_mapping[y] for y in y_true]
+    y_pred = [class_mapping[y] for y in y_pred]
     report = classification_report(y_true, y_pred)
     print("Classification report: ")
     print(report)
