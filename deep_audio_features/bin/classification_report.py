@@ -17,11 +17,39 @@ from sklearn.metrics import confusion_matrix
 from deep_audio_features.bin import config
 
 
-def test_report(model_path, folders, layers_dropped):
+def map_labels(idx2folder, class_mapping):
+    label_mapping = {}
+    for label_new, class_name in idx2folder.items():
+        for label_old, c in class_mapping.items():
+            if c in class_name :
+                label_mapping[label_old] = label_new
+
+    return label_mapping
+
+
+def user_defined_labels(y_true, y_pred, folders, class_mapping):
+    _, idx2folder = load_dataset.folders_mapping(folders=folders)
+    for name in idx2folder:
+        directories = idx2folder[name].split("/")
+        if directories[-1] == "":
+            idx2folder[name] = directories[-2]
+        else:
+            idx2folder[name] = directories[-1]
+    print("\nUser defined class mapping: {}\n".format(idx2folder))
+    label_mapping = map_labels(idx2folder, class_mapping)
+    new_class_mapping = idx2folder
+
+    y_true = [label_mapping[label] for label in y_true]
+    y_pred = [label_mapping[label] for label in y_pred]
+    return y_true, y_pred, new_class_mapping
+
+
+def test_report(model_path, folders):
     """Warning: This function is using the file_system as a shared memory
     in order to run on a big amount of data, since due to batch_size = 1,
     the share strategy used in torch.multiprocessing results in memory errors
     """
+
     with open(model_path, "rb") as input_file:
         model_params = pickle.load(input_file)
     class_mapping = model_params["classes_mapping"]
@@ -35,7 +63,6 @@ def test_report(model_path, folders, layers_dropped):
 
     spec_size = model.spec_size
     zero_pad = model.zero_pad
-    fuse = model.fuse
 
     # Load sets
     test_set = FeatureExtractorDataset(X=files_test, y=y_test,
@@ -58,10 +85,13 @@ def test_report(model_path, folders, layers_dropped):
                        cnn=True,
                        classifier=True)
 
+    y_true, y_pred, new_class_mapping = user_defined_labels(y_true, y_pred, folders, class_mapping)
+
     cm = confusion_matrix(y_true, y_pred)
     print("Confusion matrix:\n {}".format(cm))
+    sorted_labels = sorted(new_class_mapping.items())
+    labels, target_names = zip(*sorted_labels)
 
-    labels, target_names = zip(*class_mapping.items())
     report = classification_report(y_true, y_pred, labels=labels, target_names=target_names)
 
     print("Classification report: ")
@@ -78,15 +108,11 @@ if __name__ == '__main__':
     parser.add_argument('-i', '--input', required=True,
                         type=str, nargs='+', help='Input folders')
 
-    parser.add_argument('-L', '--layers', required=False, default=0,
-                        help='Number of final layers to cut. Default is 0.')
     args = parser.parse_args()
 
     # Get arguments
     model_path = args.model
     folders = args.input
-
-    layers_dropped = int(args.layers)
 
     # Fix any type errors
     folders = [f.replace(',', '').strip() for f in folders]
@@ -97,4 +123,4 @@ if __name__ == '__main__':
             raise FileNotFoundError()
 
     # Test the model
-    test_report(model_path, folders, layers_dropped)
+    test_report(model_path, folders)

@@ -45,6 +45,7 @@ def load(folders=None, test_val=[0.2, 0.2],
         raise AssertionError()
     filenames = []
     labels = []
+
     folders = sorted(folders)
 
     # Match filenames with labels
