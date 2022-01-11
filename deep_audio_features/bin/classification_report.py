@@ -63,6 +63,7 @@ def test_report(model_path, folders, layers_dropped):
 
     labels, target_names = zip(*class_mapping.items())
     report = classification_report(y_true, y_pred, labels=labels, target_names=target_names)
+
     print("Classification report: ")
     print(report)
 

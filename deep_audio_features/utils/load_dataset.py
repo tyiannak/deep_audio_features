@@ -68,8 +68,7 @@ def load(folders=None, test_val=[0.2, 0.2],
                           "Please use the exact same class names that were used for training.")
                 
         folder2idx = {v: k for k, v in idx2folder.items()}
-        print(folder2idx)
-        print(class_mapping)
+
     labels = list(map(lambda x: folder2idx[x], labels))
 
     class_mapping = {}
