@@ -354,15 +354,15 @@ def test(model, dataloader, cnn=False, classifier=True, task="classification"):
                 y_true.append(labels.cpu().data.numpy())
                 posteriors.append(out[0].cpu().detach().numpy())
 
-            if classifier is True:
-                # Get metrics
-                preds = np.array(preds).flatten()
-                y_true = np.array(y_true).flatten()
-
         else:
             inputs = inputs[:, np.newaxis, :, :]
             _, representation = model.forward(inputs)
             preds.append(representation.cpu().data.numpy())
+
+    if task == "classification" and classifier is True:
+            # Get metrics
+            preds = np.array(preds).flatten()
+            y_true = np.array(y_true).flatten()
 
     return posteriors, preds, y_true
 
