@@ -193,7 +193,7 @@ def train(_epoch, dataloader, model, loss_function,
                  dataset_size=len(dataloader.dataset))
 
     # print statistics
-    progress(loss=training_loss / len(dataloader.dataset),
+    progress(loss=training_loss / len(dataloader),
              epoch=_epoch,
              batch=index,
              batch_size=dataloader.batch_size,
@@ -202,12 +202,12 @@ def train(_epoch, dataloader, model, loss_function,
     if task == "classification":
         score = correct/len(dataloader.dataset) * 100
     else:
-        score = loss_aggregated / (len(dataloader.dataset) * dataloader.batch_size)
+        score = loss_aggregated / (len(dataloader) * dataloader.batch_size)
     # Print some stats
     # print(
     #     f'\nTrain loss at epoch {_epoch} : {round(training_loss/len(dataloader), 4)}')
     # Return loss, accuracy
-    return training_loss / len(dataloader.dataset), score
+    return training_loss / len(dataloader), score
 
 
 def validate(_epoch, dataloader, model, loss_function,
@@ -264,7 +264,7 @@ def validate(_epoch, dataloader, model, loss_function,
 
             loss_aggregated += loss.item() * inputs.size(0)
 
-        val_loss = loss_aggregated / (len(dataloader.dataset) * dataloader.batch_size)
+        val_loss = loss_aggregated / (len(dataloader) * dataloader.batch_size)
 
         if task == "classification":
             score = correct / len(dataloader.dataset)
