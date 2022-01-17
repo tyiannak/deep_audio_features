@@ -151,7 +151,7 @@ def train_model(folders=None, ofile=None, task="classification", zero_pad=ZERO_P
        validation_epochs=5,
        early_stopping=True)
     timestamp = time.ctime()
-
+    timestamp = timestamp.replace(" ", "_")
     if task == "classification":
 
         print('All validation accuracies: {} \n'.format(val_metric))
