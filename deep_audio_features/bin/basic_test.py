@@ -2,17 +2,19 @@ import argparse
 import torch
 from torch.utils.data import DataLoader
 import sys, os
+import pickle
 sys.path.insert(0, os.path.join(
     os.path.dirname(os.path.realpath(__file__)), "../../"))
 from deep_audio_features.dataloading.dataloading import FeatureExtractorDataset
 from deep_audio_features.models.cnn import load_cnn
+from deep_audio_features.models.convAE import load_convAE
 from deep_audio_features.lib.training import test
 from deep_audio_features.utils.model_editing import drop_layers
 import deep_audio_features.bin.config
 import numpy
 
 
-def test_model(modelpath, ifile, layers_dropped,
+def test_model(modelpath, ifile, layers_dropped=0,
                test_segmentation=False, verbose=True):
     """Loads a model and predicts each classes probability
 
@@ -36,24 +38,26 @@ Returns:
     """
     device = "cuda" if torch.cuda.is_available() else "cpu"
     # Restore model
-    model, hop_length, window_length = load_cnn(modelpath)
-    model = model.to(device)
-    class_names = model.classes_mapping
-    max_seq_length = model.max_sequence_length
+    with open(modelpath, "rb") as input_file:
+        model_params = pickle.load(input_file)
+    if "classes_mapping" in model_params:
+        task = "classification"
+        model, hop_length, window_length = load_cnn(modelpath)
+        class_names = model.classes_mapping
+        # Apply layer drop
+        model = drop_layers(model, layers_dropped)
+    else:
+        task = "representation"
+        model, hop_length, window_length = load_convAE(modelpath)
 
+    model = model.to(device)
+    max_seq_length = model.max_sequence_length
 
     zero_pad = model.zero_pad
     spec_size = model.spec_size
     fuse = model.fuse
 
-    # Apply layer drop
-    model = drop_layers(model, layers_dropped)
     model.max_sequence_length = max_seq_length
-
-    # print('Model:\n{}'.format(model))
-
-    # Move to device
-    model.to(device)
 
     # Create test set
     test_set = FeatureExtractorDataset(X=[ifile],
@@ -74,28 +78,30 @@ Returns:
                              shuffle=False)
 
     # Forward a sample
-    posteriors, y_pred, _ = test(model=model, dataloader=test_loader,
-                                 cnn=True,
+    posteriors, preds, _ = test(model=model, dataloader=test_loader,
+                                 cnn=True, task=task,
                                  classifier=True if layers_dropped == 0
                                  else False)
-
     if verbose:
-        print("--> Unormalized posteriors:\n {}\n".format(posteriors))
-        if layers_dropped == 0:
-            print("--> Predictions:\n {}".format([class_names[yy] 
-                                                  for yy in y_pred]))
-        # show aggregated posteriors:
-        posts = numpy.array(posteriors)
-        probs = []
-        for w in range(posts.shape[0]): # for each segment:
-            p = numpy.exp(posts[w, :]) / numpy.sum(numpy.exp(posts[w, :]))
-            probs.append(p)
-        probs = numpy.array(probs)
-        p_aggregated = probs.mean(axis = 0)
-        for ip in numpy.argsort(p_aggregated)[::-1]:
-            print(f"{class_names[ip]}\t{p_aggregated[ip]:.2f}")
+        if task == "classification":
+            print("--> Unormalized posteriors:\n {}\n".format(posteriors))
+            if layers_dropped == 0:
+                print("--> Predictions:\n {}".format([class_names[yy]
+                                                      for yy in preds]))
+            # show aggregated posteriors:
+            posts = numpy.array(posteriors)
+            probs = []
+            for w in range(posts.shape[0]): # for each segment:
+                p = numpy.exp(posts[w, :]) / numpy.sum(numpy.exp(posts[w, :]))
+                probs.append(p)
+            probs = numpy.array(probs)
+            p_aggregated = probs.mean(axis=0)
+            for ip in numpy.argsort(p_aggregated)[::-1]:
+                print(f"{class_names[ip]}\t{p_aggregated[ip]:.2f}")
+        else:
+            print("--> Representations:\n {}\n".format(preds))
 
-    return y_pred, numpy.array(posteriors)
+    return preds, numpy.array(posteriors)
 
 
 if __name__ == '__main__':

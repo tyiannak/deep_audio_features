@@ -13,6 +13,7 @@ def train_and_validate(model,
                        optimizer,
                        epochs,
                        cnn=False,
+                       task="classification",
                        validation_epochs=5,
                        early_stopping=False,
                        patience=10):
@@ -35,15 +36,17 @@ def train_and_validate(model,
     VALIDATION_EPOCHS = validation_epochs
 
     # Store losses, models
-    all_accuracy_training = []
-    all_accuracy_validation = []
     all_train_loss = []
     all_valid_loss = []
-    all_valid_f1 = []
+    all_metric_training = []
+    all_metric_validation = []
+    all_valid_comparison_metric = []
     best_model = None
     best_model_epoch = 0
-    min_loss = 1000
-    f1_max = 0
+    if task == "classification":
+        comparison_metric_max = 0
+    else:
+        comparison_metric_max = 1e5
     early_stop_counter = 0
 
     # Iterate for EPOCHS
@@ -51,17 +54,19 @@ def train_and_validate(model,
 
         scheduler.step(epoch)
         # ===== Training HERE =====
-        train_loss, train_acc = train(epoch, train_loader, model,
-                                      loss_function, optimizer, cnn=cnn)
+        train_loss, train_metric = train(
+            epoch, train_loader, model,
+            loss_function, optimizer, cnn=cnn,
+            task=task)
         # Store statistics for later usage
         all_train_loss.append(train_loss)
-        all_accuracy_training.append(train_acc)
+        all_metric_training.append(train_metric)
 
         # ====== VALIDATION HERE ======
 
-        valid_loss, valid_acc, valid_f1 = validate(epoch, valid_loader,
-                                         model, loss_function,
-                                         validation_epochs, cnn=cnn)
+        valid_loss, valid_metric, comparison_metric = validate(
+            epoch, valid_loader, model, loss_function,
+            validation_epochs, cnn=cnn, task=task)
 
         # Find best model
         if best_model is None:
@@ -70,11 +75,14 @@ def train_and_validate(model,
             best_model = deepcopy(model).to('cpu')
             best_model_epoch = epoch
             # Save new minimum
-            f1_max = valid_f1
+            comparison_metric_max = comparison_metric
         # New model with lower loss
-        elif valid_f1 > f1_max + 1e-5:
+        elif (task == "classification" and
+              comparison_metric > comparison_metric_max + 1e-5)\
+                or (task != "classification" and
+                    comparison_metric < comparison_metric_max - 1e-6):
             # Update loss
-            f1_max = valid_f1
+            comparison_metric_max = comparison_metric
             # Update best model, store on cpu
             best_model = deepcopy(model).to('cpu')
             best_model_epoch = epoch
@@ -84,8 +92,9 @@ def train_and_validate(model,
 
         # Store statistics for later usage
         all_valid_loss.append(valid_loss)
-        all_accuracy_validation.append(valid_acc)
-        all_valid_f1.append(valid_f1)
+        if task == "classification":
+            all_metric_validation.append(valid_metric)
+        all_valid_comparison_metric.append(comparison_metric)
         # Make sure enough epochs have passed
         if epoch < 4 * VALIDATION_EPOCHS:
             continue
@@ -105,36 +114,26 @@ def train_and_validate(model,
             best_model = best_model.to(device)
             # Exit 2 loops at the same time, go to testing
             return best_model, all_train_loss, all_valid_loss, \
-                   all_accuracy_training, all_accuracy_validation,\
-                   all_valid_f1, epoch
+                   all_metric_training, all_metric_validation,\
+                   all_valid_comparison_metric, epoch
 
-        # Small change in loss
-        """
-        if (abs(all_valid_loss[-1] - all_valid_loss[-2]) < 1e-3 and
-                abs(all_valid_loss[-2] - all_valid_loss[-3]) < 1e-3):
-            print(f'\nVery small change in loss..')
-            print(f'\nResetting model to epoch {best_model_epoch}.')
-            # Remove unnessesary model
-            model.to('cpu')
-            best_model = best_model.to(device)
-            # Exit 2 loops at the same time, go to testing
-            return best_model, all_train_loss, all_valid_loss, \
-                   all_accuracy_training, all_accuracy_validation, epoch
-        """
+
     print(f'\nTraining exited normally at epoch {epoch}.')
     # Remove unnessesary model
     model.to('cpu')
     best_model = best_model.to(device)
     return best_model, all_train_loss, all_valid_loss, \
-           all_accuracy_training, all_accuracy_validation,\
-           all_valid_f1, epoch
+           all_metric_training, all_metric_validation,\
+           all_valid_comparison_metric, epoch
 
 
-def train(_epoch, dataloader, model, loss_function, optimizer, cnn=False):
+def train(_epoch, dataloader, model, loss_function,
+          optimizer, cnn=False, task="classification"):
     # Set model to train mode
     model.train()
     training_loss = 0.0
     correct = 0
+    loss_aggregated = 0
 
     # obtain the model's device ID
     device = next(model.parameters()).device
@@ -152,25 +151,31 @@ def train(_epoch, dataloader, model, loss_function, optimizer, cnn=False):
         optimizer.zero_grad()
 
         # Forward pass: y' = model(x)
-        if cnn is False:
-            y_pred = model.forward(inputs, lengths)
+        if task == "classification":
+            if cnn is False:
+                y_pred = model.forward(inputs, lengths)
+            else:
+                # We got a CNN
+                # Add a new axis for CNN filter features, [z-axis]
+                inputs = inputs[:, np.newaxis, :, :]
+                y_pred = model.forward(inputs)
+            loss = loss_function(y_pred, labels)
+            labels_cpu = labels.detach().clone().to('cpu').numpy()
+            # Get accuracy
+            correct += sum([int(a == b)
+                            for a, b in zip(labels_cpu,
+                                            np.argmax(y_pred.detach().clone().to('cpu').numpy(),
+                                                      axis=1))])
         else:
-            # We got a CNN
-            # Add a new axis for CNN filter features, [z-axis]
             inputs = inputs[:, np.newaxis, :, :]
-            y_pred = model.forward(inputs)
+            x_reconstructed, _ = model.forward(inputs)
+            loss = loss_function(x_reconstructed, inputs)
+            loss_aggregated += loss.item() * inputs.size(0)
 
         # print(f'\ny_preds={y_pred}')
         # print(f'\nlabels={labels}')
         # Compute loss: L = loss_function(y', y)
-        loss = loss_function(y_pred, labels)
 
-        labels_cpu = labels.detach().clone().to('cpu').numpy()
-        # Get accuracy
-        correct += sum([int(a == b)
-                        for a, b in zip(labels_cpu,
-                                        np.argmax(y_pred.detach().clone().to('cpu').numpy(),
-                                                  axis=1))])
         # Backward pass: compute gradient wrt model parameters
         loss.backward()
 
@@ -188,34 +193,36 @@ def train(_epoch, dataloader, model, loss_function, optimizer, cnn=False):
                  dataset_size=len(dataloader.dataset))
 
     # print statistics
-    progress(loss=training_loss / len(dataloader.dataset),
+    progress(loss=training_loss / len(dataloader),
              epoch=_epoch,
              batch=index,
              batch_size=dataloader.batch_size,
              dataset_size=len(dataloader.dataset))
 
-    accuracy = correct/len(dataloader.dataset) * 100
+    if task == "classification":
+        score = correct/len(dataloader.dataset) * 100
+    else:
+        score = loss_aggregated / (len(dataloader) * dataloader.batch_size)
     # Print some stats
     # print(
     #     f'\nTrain loss at epoch {_epoch} : {round(training_loss/len(dataloader), 4)}')
     # Return loss, accuracy
-    return training_loss / len(dataloader.dataset), accuracy
+    return training_loss / len(dataloader), score
 
 
 def validate(_epoch, dataloader, model, loss_function,
-             validation_epochs, cnn=False):
+             validation_epochs, cnn=False, task="classification"):
     """Validate the model."""
 
     # Put model to evalutation mode
     model.eval()
 
     correct = 0
-
+    loss_aggregated = 0
     # obtain the model's device ID
     device = next(model.parameters()).device
 
     with torch.no_grad():
-        valid_loss = 0
 
         pred_all = []
         actual_labels = []
@@ -228,48 +235,62 @@ def validate(_epoch, dataloader, model, loss_function,
             inputs = inputs.to(device)
             labels = labels.type('torch.LongTensor').to(device)
 
-            # Forward through the network
-            if cnn is False:
-                y_pred = model.forward(inputs, lengths)
+            if task == "classification":
+                # Forward through the network
+                if cnn is False:
+                    y_pred = model.forward(inputs, lengths)
+                else:
+                    # We got CNN
+                    # Add a new axis for CNN filter features, [z-axis]
+                    inputs = inputs[:, np.newaxis, :, :]
+                    y_pred = model.forward(inputs)
+
+                loss = loss_function(y_pred, labels)
+
+                y_pred = np.argmax(y_pred.detach().clone().to('cpu').numpy(), axis=1)
+                pred_all.append(y_pred)
+
+                labels_cpu = labels.detach().clone().to('cpu').numpy()
+                actual_labels.append(labels_cpu)
+                # Get accuracy
+                correct += sum([int(a == b)
+                                for a, b in zip(labels_cpu, y_pred)])
+
+
             else:
-                # We got CNN
-                # Add a new axis for CNN filter features, [z-axis]
                 inputs = inputs[:, np.newaxis, :, :]
-                y_pred = model.forward(inputs)
+                x_reconstructed, _ = model.forward(inputs)
+                loss = loss_function(x_reconstructed, inputs)
 
-            # Compute loss
-            loss = loss_function(y_pred, labels)
+            loss_aggregated += loss.item() * inputs.size(0)
 
-            # Add validation loss
-            valid_loss += loss.data.item()
+        val_loss = loss_aggregated / (len(dataloader) * dataloader.batch_size)
 
-            y_pred = np.argmax(y_pred.detach().clone().to('cpu').numpy(), axis=1)
-            pred_all.append(y_pred)
+        if task == "classification":
+            score = correct / len(dataloader.dataset)
+            labels = [item for sublist in actual_labels for item in sublist]
+            preds = [item for sublist in pred_all for item in sublist]
+            comparison_metric = f1_score(labels, preds, average='macro')
 
-            labels_cpu = labels.detach().clone().to('cpu').numpy()
-            actual_labels.append(labels_cpu)
-            # Get accuracy
-            correct += sum([int(a == b)
-                            for a, b in zip(labels_cpu, y_pred)])
-
-        accuracy = correct / len(dataloader.dataset)
-
-        labels = [item for sublist in actual_labels for item in sublist]
-        preds = [item for sublist in pred_all for item in sublist]
-        f1 = f1_score(labels, preds, average='macro')
+        else:
+            score = val_loss
+            comparison_metric = score
 
         if _epoch % validation_epochs == 0:
             # Print some stats
             print('\nValidation results for epoch {}:'.format(_epoch))
-            print('    --> loss: {}'.format(
-                round(valid_loss/len(dataloader.dataset), 4)))
-            print('    --> accuracy: {}'.format(round(accuracy, 4)))
-            print('    --> f1 score: {}'.format(round(f1, 4)))
+            if task == "classification":
+                print('    --> loss: {}'.format(
+                    round(val_loss, 4)))
+                print('    --> accuracy: {}'.format(round(score, 4)))
+                print('    --> f1 score: {}'.format(round(comparison_metric, 4)))
+            else:
+                print('    --> MSE: {}'.format(round(score, 4)))
 
-    return valid_loss / len(dataloader.dataset), accuracy, f1
+    return val_loss, score, comparison_metric
 
 
-def test(model, dataloader, cnn=False, classifier=True):
+def test(model, dataloader, cnn=False, classifier=True, task="classification"):
     """Tests a given model.
 
 ### Arguments:
@@ -302,7 +323,7 @@ def test(model, dataloader, cnn=False, classifier=True):
     correct = 0
     # Create empty array for storing predictions and labels
     posteriors = []
-    y_pred = []
+    preds = []
     y_true = []
     for index, batch in enumerate(dataloader, 1):
         # Split each batch[index]
@@ -310,34 +331,40 @@ def test(model, dataloader, cnn=False, classifier=True):
 
         # Transfer to device
         inputs = inputs.to(device)
-        labels = labels.type('torch.LongTensor').to(device)
-        # print(f'\n labels: {labels}')
+        if task == "classification":
+            labels = labels.type('torch.LongTensor').to(device)
 
-        # Forward through the network
-        if cnn is False:
-            out = model.forward(inputs, lengths)
+            # Forward through the network
+            if cnn is False:
+                out = model.forward(inputs, lengths)
+            else:
+                # Add a new axis for CNN filter features, [z-axis]
+                inputs = inputs[:, np.newaxis, :, :]
+                out = model.forward(inputs)
+
+            if classifier is False:
+                posteriors.append(out.cpu().detach().numpy())
+                preds.append(None)
+                y_true.append(None)
+            else:
+                # Predict the one with the maximum probability
+                predictions = torch.argmax(out, -1)
+                # Save predictions
+                preds.append(predictions.cpu().data.numpy())
+                y_true.append(labels.cpu().data.numpy())
+                posteriors.append(out[0].cpu().detach().numpy())
+
         else:
-            # Add a new axis for CNN filter features, [z-axis]
             inputs = inputs[:, np.newaxis, :, :]
-            out = model.forward(inputs)
+            _, representation = model.forward(inputs)
+            preds.append(representation.cpu().data.numpy())
 
-        if classifier is False:
-            posteriors.append(out.cpu().detach().numpy())
-            y_pred.append(None)
-            y_true.append(None)
-        else:
-            # Predict the one with the maximum probability
-            predictions = torch.argmax(out, -1)
-            # Save predictions
-            y_pred.append(predictions.cpu().data.numpy())
-            y_true.append(labels.cpu().data.numpy())
-            posteriors.append(out[0].cpu().detach().numpy())
-    if classifier is True:
-        # Get metrics
-        y_pred = np.array(y_pred).flatten()
-        y_true = np.array(y_true).flatten()
+    if task == "classification" and classifier is True:
+            # Get metrics
+            preds = np.array(preds).flatten()
+            y_true = np.array(y_true).flatten()
 
-    return posteriors, y_pred, y_true
+    return posteriors, preds, y_true
 
 
 def progress(loss, epoch, batch, batch_size, dataset_size):

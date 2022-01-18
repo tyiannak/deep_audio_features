@@ -138,3 +138,43 @@ from deep_audio_features.combine import predict
 predict.predict("4class_balanced/speech/s_BDYDHQBQMX_30.0_31.0.wav", modification)
 ```
 (load model as above)
+
+### 3.5 Train a Convolutional Autoencoder
+
+To train a Convolutional Autoencoder you can use the following command:
+```python
+python3 deep_audio_features/bin/basic_training.py -t representation -i /path/to/folder1 /path/to/folder2
+```
+`-t` : performed task is representation learning.
+`-i` : select the unique folder or multiple folders where the data will be loaded from.
+`-o` : select the exported file name.
+
+Or call the following function in Python:
+```python
+from deep_audio_features.bin import basic_training as bt
+bt.train_model(["low","medium","high"], "energy", task="representation")
+```
+The code above reads the WAV files in 3 folders, but avoids to use the folder names as classnames since an unsupervised process is performed. Then it extracts 
+spectrogram representations from the respective sounds, trains and validates the ConvAE and saves the 
+trained model in `pkl/energy.pt`
+
+The number of channels in the final representation is set from the REPRESENTATION_CHANNELS variable found in deep_audio_feature/bin/config.py.
+
+### 3.6 Testing a Convolutional Autoencoder
+
+```
+python3 deep_audio_features/bin/basic_test.py -m /path/to/model/ -i /path/to/file (-s)
+```
+`-i` : select the file where the testing data will be loaded from.
+
+`-m` : select a model to apply testing.
+
+`-s`  : if included extracts segment level predictions of a sequence
+
+Or call the following function in Python:
+```python
+from deep_audio_features.bin import basic_test as btest
+emb, _ = btest.test_model("pkl/energy.pt", 'some_file.wav', test_segmentation=False)
+```
+The code above will find out that the model is a ConvAE and will load it in order to extract the embedding from an audio signal stored in `some_file.wav`.
+`emb` stores the produced embeddings. 

@@ -1,4 +1,5 @@
 import os
+import sys
 import numpy as np
 import glob
 from sklearn.model_selection import StratifiedShuffleSplit
@@ -44,6 +45,7 @@ def load(folders=None, test_val=[0.2, 0.2],
         raise AssertionError()
     filenames = []
     labels = []
+
     folders = sorted(folders)
 
     # Match filenames with labels
@@ -56,13 +58,28 @@ def load(folders=None, test_val=[0.2, 0.2],
     folder2idx, idx2folder = folders_mapping(folders=folders)
     if class_mapping:
         for k, v in idx2folder.items():
+            unseen_class = True
             for k_2, v_2 in class_mapping.items():
                 if v_2 in v:
                     idx2folder[k_2] = v
+                    unseen_class = False
+            
+            if unseen_class:
+                 sys.exit("Error: You provided a class name that was not seen during training. "
+                          "Please use the exact same class names that were used for training.")
+                
         folder2idx = {v: k for k, v in idx2folder.items()}
 
     labels = list(map(lambda x: folder2idx[x], labels))
-    class_mapping = {name: idx2folder[name].split("/")[-1] for name in idx2folder}
+
+    class_mapping = {}
+    for name in idx2folder:
+        directories = idx2folder[name].split("/")
+        if directories[-1] == "":
+            class_mapping[name] = directories[-2]
+        else:
+            class_mapping[name] = directories[-1]
+
     # Split
     if test is False and validation is False:
         # Use this data only to train
