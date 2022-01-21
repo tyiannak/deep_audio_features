@@ -15,7 +15,7 @@ Print whether a layer updates its weights or not.
     for ch1 in model.children():
         for layer in ch1.children():
             if isinstance(layer, torch.nn.Conv2d) or \
-                    isinstance(layer, torch.nn.Linear):
+                    isinstance(layer, torch.nn.Linear) or isinstance(layer, torch.nn.BatchNorm2d):
                 print(f"{layer} -> {layer.weight.requires_grad}")
     print("--------------------------------")
     print('\n\n')
@@ -123,11 +123,11 @@ def fine_tune_model(model=None, output_dim=None, strategy=False,
         # Freeze all layers except for the linear
         for seq_layername, seq_layer in named_children:
             # Find all Conv2d layers and freeze weights
-            if any([isinstance(c, torch.nn.Conv2d)
+            if any([isinstance(c, torch.nn.Conv2d) or isinstance(c, torch.nn.BatchNorm2d)
                     for c in seq_layer.children()]):
                 for nested_layer in seq_layer.children():
                     # Skip all except Conv2d
-                    if not isinstance(nested_layer, torch.nn.Conv2d):
+                    if not isinstance(nested_layer, torch.nn.Conv2d) and not isinstance(nested_layer, torch.nn.BatchNorm2d):
                         continue
                     # Set grad off for bias as well as weights
                     try:
@@ -140,11 +140,11 @@ def fine_tune_model(model=None, output_dim=None, strategy=False,
         for i in range(layers_freezed):
             seq_layername, seq_layer = named_children[i]
             # Find all Conv2d or Linear layers and freeze weights
-            if any([isinstance(c, torch.nn.Conv2d) or isinstance(c, torch.nn.Linear)
+            if any([isinstance(c, torch.nn.Conv2d) or isinstance(c, torch.nn.Linear) or isinstance(c, torch.nn.BatchNorm2d)
                     for c in seq_layer.children()]):
                 for nested_layer in seq_layer.children():
                     # Skip all except Conv2d or Linear
-                    if not isinstance(nested_layer, torch.nn.Conv2d) and not isinstance(nested_layer, torch.nn.Linear):
+                    if not isinstance(nested_layer, torch.nn.Conv2d) and not isinstance(nested_layer, torch.nn.Linear) and not isinstance(nested_layer, torch.nn.BatchNorm2d):
                         continue
                     # Set grad off for bias as well as weights
                     try:
