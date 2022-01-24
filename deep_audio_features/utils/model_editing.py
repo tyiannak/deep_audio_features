@@ -15,7 +15,7 @@ Print whether a layer updates its weights or not.
     for ch1 in model.children():
         for layer in ch1.children():
             if isinstance(layer, torch.nn.Conv2d) or \
-                    isinstance(layer, torch.nn.Linear):
+                    isinstance(layer, torch.nn.Linear) or isinstance(layer, torch.nn.BatchNorm2d):
                 print(f"{layer} -> {layer.weight.requires_grad}")
     print("--------------------------------")
     print('\n\n')
@@ -79,8 +79,8 @@ Returns:
     return new_model
 
 
-def fine_tune_model(model=None, output_dim=None, strategy=0,
-                    deepcopy=False, *args, **kwargs):
+def fine_tune_model(model=None, output_dim=None, strategy=False,
+                    deepcopy=False, layers_freezed=0, *args, **kwargs):
     """Fine tune a given model.
 
 # Arguments:
@@ -91,8 +91,7 @@ def fine_tune_model(model=None, output_dim=None, strategy=0,
 
         strategy {int} :
 
-            * 0 : Return a model that updates all its
-                    weights and has new output dimension.
+            * 0 : Return a model that has freezed the first #layers_freezed layers.
 
             * 1 : Return a model that updates all its `Linear`
                     weights only and has new output dimension.
@@ -108,29 +107,27 @@ def fine_tune_model(model=None, output_dim=None, strategy=0,
         raise AttributeError()
     if deepcopy is True:
         model = copy.deepcopy(model)
+    if layers_freezed not in list(range(0, len(list(model.children()))+1)):
+        raise ArithmeticError(
+            f'Please check out the number of layers to '
+            f'be freezed ({layers_freezed}).')
 
-    if strategy == 0: # Train the entire model
-        # Get all layers
-        model_layers = [y for x in model.children() for y in x.children()]
-        if model_layers == []:
-            # Has not children level 2 => functional
-            FUNCTIONAL = True
-            raise NotImplementedError()
-        named_children = list(model.named_children())
 
-    elif strategy == 1: # Train only linear layers
+    # Get all layers
+    model_layers = [y for x in model.children() for y in x.children()]
+    if model_layers == []:
+        raise NotImplementedError()
+    named_children = list(model.named_children())
+
+    if strategy: # Train only linear layers
         # Freeze all layers except for the linear
-        model_layers = [y for x in model.children() for y in x.children()]
-        if model_layers == []:
-            raise NotImplementedError()
-        named_children = list(model.named_children())
         for seq_layername, seq_layer in named_children:
             # Find all Conv2d layers and freeze weights
-            if any([isinstance(c, torch.nn.Conv2d)
+            if any([isinstance(c, torch.nn.Conv2d) or isinstance(c, torch.nn.BatchNorm2d)
                     for c in seq_layer.children()]):
                 for nested_layer in seq_layer.children():
                     # Skip all except Conv2d
-                    if not isinstance(nested_layer, torch.nn.Conv2d):
+                    if not isinstance(nested_layer, torch.nn.Conv2d) and not isinstance(nested_layer, torch.nn.BatchNorm2d):
                         continue
                     # Set grad off for bias as well as weights
                     try:
@@ -138,6 +135,24 @@ def fine_tune_model(model=None, output_dim=None, strategy=0,
                         nested_layer.weight.requires_grad = False
                     except Exception as e:
                         raise e("Error while trying to turn off gradients.")
+    elif layers_freezed != 0:
+        # Freeze given number of layers
+        for i in range(layers_freezed):
+            seq_layername, seq_layer = named_children[i]
+            # Find all Conv2d or Linear layers and freeze weights
+            if any([isinstance(c, torch.nn.Conv2d) or isinstance(c, torch.nn.Linear) or isinstance(c, torch.nn.BatchNorm2d)
+                    for c in seq_layer.children()]):
+                for nested_layer in seq_layer.children():
+                    # Skip all except Conv2d or Linear
+                    if not isinstance(nested_layer, torch.nn.Conv2d) and not isinstance(nested_layer, torch.nn.Linear) and not isinstance(nested_layer, torch.nn.BatchNorm2d):
+                        continue
+                    # Set grad off for bias as well as weights
+                    try:
+                        nested_layer.bias.requires_grad = False
+                        nested_layer.weight.requires_grad = False
+                    except Exception as e:
+                        raise e("Error while trying to turn off gradients.")
+
 
     for seq_layername, seq_layer in named_children[::-1]:
         if any([isinstance(c, torch.nn.Linear)

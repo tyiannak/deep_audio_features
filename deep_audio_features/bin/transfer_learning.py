@@ -18,9 +18,10 @@ import sys
 import pickle
 from torch.utils.data import DataLoader
 
+
 sys.path.insert(0, os.path.join(
     os.path.dirname(os.path.realpath(__file__)), "../../"))
-
+from deep_audio_features.models.convAE import load_convAE
 from deep_audio_features.models.cnn import load_cnn
 from deep_audio_features.bin.config import EPOCHS, CNN_BOOLEAN, VARIABLES_FOLDER, ZERO_PAD, \
     FORCE_SIZE, SPECTOGRAM_SIZE, FEATURE_EXTRACTION_METHOD, OVERSAMPLING, \
@@ -34,28 +35,36 @@ from deep_audio_features.dataloading.dataloading import FeatureExtractorDataset
 # sys.path.insert(0, '/'.join(os.path.abspath(__file__).split(' /')[:-2]))
 
 
-def transfer_learning(model=None, folders=None, strategy=0,
-                      zero_pad=ZERO_PAD, forced_size=None):
+def transfer_learning(modelpath=None, ofile=None, folders=None, strategy=False,
+                      zero_pad=ZERO_PAD, forced_size=None, layers_freezed=0):
     """Transfer learning from all folders given to a model."""
 
     # Arguments check
     if folders is None:
         raise FileNotFoundError()
 
-    if model is None:
+    if modelpath is None:
         raise FileNotFoundError()
 
-    if not isinstance(strategy, int):
-        raise AttributeError("variable `strategy` should be int !")
+
+    if not isinstance(layers_freezed, int):
+        raise AttributeError("variable `layers_freezed` should be int !")
 
     # Create classes
-    classes = [os.path.basename(f) for f in folders]
+    #classes = [os.path.basename(f) for f in folders]
 
     # Check if the model is already loaded
     # and load it to 'cpu' to get some free GPU for Dataloaders
-    if isinstance(model, str):
+    if isinstance(modelpath, str):
         print('Loading model...')
-        model, hop_length, window_length = load_cnn(model)
+        with open(modelpath, "rb") as input_file:
+            model_params = pickle.load(input_file)
+        if "classes_mapping" in model_params:
+            task = "classification"
+            model, hop_length, window_length = load_cnn(modelpath)
+        else:
+            task = "representation"
+            model, hop_length, window_length = load_convAE(modelpath)
     else:
         print('Model already loaded...\nMoving it to CPU...')
 
@@ -64,6 +73,8 @@ def transfer_learning(model=None, folders=None, strategy=0,
     # Get max_seq_length from the model
     max_seq_length = model.max_sequence_length
     print(f"Setting max sequence length: {max_seq_length}...")
+    zero_pad = model.zero_pad
+    fuse = model.fuse
 
     # Use data only for training and validation
     files_train, y_train, files_eval, y_eval, classes_mapping = load_dataset.load(
@@ -83,7 +94,7 @@ def transfer_learning(model=None, folders=None, strategy=0,
                                         max_sequence_length=max_seq_length,
                                         zero_pad=zero_pad,
                                         forced_size=spec_size,
-                                        fuse=FUSED_SPECT,
+                                        fuse=fuse,
                                         hop_length=hop_length, window_length=window_length)
 
     eval_set = FeatureExtractorDataset(X=files_eval, y=y_eval,
@@ -92,7 +103,7 @@ def transfer_learning(model=None, folders=None, strategy=0,
                                        max_sequence_length=max_seq_length,
                                        zero_pad=zero_pad,
                                        forced_size=spec_size,
-                                       fuse=FUSED_SPECT,
+                                       fuse=fuse,
                                        hop_length=hop_length, window_length=window_length)
 
     # Add dataloader
@@ -108,17 +119,20 @@ def transfer_learning(model=None, folders=None, strategy=0,
 
     # Finetune
     model = fine_tune_model(model=model, output_dim=len(classes_mapping),
-                            strategy=strategy, deepcopy=True)
+                            strategy=strategy, deepcopy=True, layers_freezed=layers_freezed)
 
     # use GPU if available
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"DEVICE: {device}")
-    # Send model to device
-    model.to('cpu')
-    print(model)
+
+    #model.to('cpu')
+
     print_require_grad_parameter(model)
 
-    # Add max_seq_length to model
+    # Send model to device
+    model.to(device)
+    print(model)
+    # Number of parameters to be updated
     print('Model parameters:{}'.format(sum(p.numel()
                                            for p in model.parameters()
                                            if p.requires_grad)))
@@ -126,41 +140,83 @@ def transfer_learning(model=None, folders=None, strategy=0,
     ##################################
     # TRAINING PIPELINE
     ##################################
-    loss_function = torch.nn.CrossEntropyLoss()
     optimizer = torch.optim.AdamW(params=model.parameters(),
                                   lr=0.001,
                                   weight_decay=.02)
 
-    best_model, train_losses, valid_losses, train_accuracy, \
-    valid_accuracy, valid_f1, _epochs = train_and_validate(model=model,
-                                                 train_loader=train_loader,
-                                                 valid_loader=valid_loader,
-                                                 loss_function=loss_function,
-                                                 optimizer=optimizer,
-                                                 epochs=EPOCHS,
-                                                 cnn=CNN_BOOLEAN,
-                                                 validation_epochs=5,
-                                                 early_stopping=True)
+    if task == "classification":
+        loss_function = torch.nn.CrossEntropyLoss()
+    else:
+        loss_function = torch.nn.MSELoss()
+
+
+    best_model, train_losses, valid_losses, \
+    train_metric, val_metric, \
+    val_comparison_metric, _epochs = train_and_validate(
+        model=model, train_loader=train_loader,
+        valid_loader=valid_loader,
+        loss_function=loss_function,
+        optimizer=optimizer,
+        epochs=EPOCHS,
+        task=task,
+        cnn=CNN_BOOLEAN,
+        validation_epochs=5,
+        early_stopping=True)
 
     timestamp = time.ctime()
-    model_id = f"{best_model.__class__.__name__}_{_epochs}_{timestamp}.pt"
+    timestamp = timestamp.replace(" ", "_")
+
+    if task == "classification":
+
+        print('All validation accuracies: {} \n'.format(val_metric))
+        best_index = val_comparison_metric.index(max(val_comparison_metric))
+        best_model_acc = val_metric[best_index]
+        print('Best model\'s validation accuracy: {}'.format(best_model_acc))
+        best_model_f1 = val_comparison_metric[best_index]
+        print('Best model\'s validation f1 score: {}'.format(best_model_f1))
+        best_model_loss = valid_losses[best_index]
+        print('Best model\'s validation loss: {}'.format(best_model_loss))
+
+    else:
+
+        print('All validation errors: {} \n'.format(val_comparison_metric))
+        best_index = val_comparison_metric.index(min(val_comparison_metric))
+        best_model_error = val_comparison_metric[best_index]
+        print('Best model\'s validation error: {}'.format(best_model_error))
+        best_model_loss = valid_losses[best_index]
+        print('Best model\'s validation loss: {}'.format(best_model_loss))
+
+    if ofile is None:
+        ofile = f"{best_model.__class__.__name__}_{_epochs}_{timestamp}.pt"
+    else:
+        ofile = str(ofile)
+        if '.pt' not in ofile or '.pkl' not in ofile:
+            ofile = ''.join([ofile, '.pt'])
+
+    if not os.path.exists(VARIABLES_FOLDER):
+        os.makedirs(VARIABLES_FOLDER)
     modelname = os.path.join(
-        VARIABLES_FOLDER, model_id)
-    print(f"\nSaving model to: {model_id}\n")
-    # Save model for later use
+        VARIABLES_FOLDER, ofile)
 
+    print(f"\nSaving model to: {modelname}\n")
     best_model = best_model.to("cpu")
-
+    # Save model for later use
     model_params = {
-        "height": best_model.height, "width": best_model.width,  "classes_mapping": classes_mapping,
-        "output_dim": best_model.output_dim, "zero_pad": best_model.zero_pad, "spec_size": best_model.spec_size,
-        "fuse": best_model.fuse, "validation_f1": valid_f1, "max_sequence_length": best_model.max_sequence_length,
-        "type": best_model.type, "state_dict": best_model.state_dict()
+        "height": best_model.height, "width": best_model.width,
+        "zero_pad": zero_pad, "spec_size": spec_size, "fuse": fuse,
+        "max_sequence_length": max_seq_length,
+        "type": best_model.type, "state_dict": best_model.state_dict(), "window_length": window_length,
+        "hop_length": hop_length
     }
-
+    if task == "classification":
+        model_params["classes_mapping"] = classes_mapping
+        model_params["output_dim"] = len(classes_mapping)
+        model_params["validation_f1"] = best_model_f1
+    else:
+        model_params["representation_channels"] = best_model.representation_channels
+        model_params["validation_error"] = best_model_error
     with open(modelname, "wb") as output_file:
         pickle.dump(model_params, output_file)
-
 
 if __name__ == '__main__':
 
@@ -172,16 +228,21 @@ if __name__ == '__main__':
     parser.add_argument('-m', '--model', required=True, type=str,
                         help='Model to apply tranfer learning.')
 
-    parser.add_argument('-s', '--strategy', required=False, default=0, type=int,
-                        help='Strategy to apply in transfer learning: 0 or 1.')
+    parser.add_argument('-s', '--strategy', required=False, action='store_true',
+                        help='If added update only linear layers')
 
+    parser.add_argument('-l', '--layers_freezed', required=False, default=0,
+                        type=int, help='Number of final layers to freeze their weights')
+    parser.add_argument('-o', '--ofile', required=False, default=None,
+                        type=str, help='Model name.')
     args = parser.parse_args()
 
     # Get argument
     folders = args.input
     modelpath = args.model
     strategy = args.strategy
-
+    layers_freezed = args.layers_freezed
+    ofile = args.ofile
     # Fix any type errors
     folders = [f.replace(',', '').strip() for f in folders]
 
@@ -196,7 +257,7 @@ if __name__ == '__main__':
 
     # If everything is ok, time to start
     if FORCE_SIZE:
-        transfer_learning(model=modelpath, folders=folders,
-                          strategy=strategy, forced_size=SPECTOGRAM_SIZE)
+        transfer_learning(modelpath=modelpath, ofile=ofile, folders=folders,
+                          strategy=strategy, forced_size=SPECTOGRAM_SIZE, layers_freezed=layers_freezed)
     else:
-        transfer_learning(model=modelpath, folders=folders, strategy=strategy)
+        transfer_learning(modelpath=modelpath, ofile=ofile, folders=folders, strategy=strategy, layers_freezed=layers_freezed)
