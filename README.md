@@ -79,18 +79,18 @@ creport.test_report("/path/to/model/", ["low","medium","high"], layers_dropped=0
 
 To transfer knowledge from a pre-trained model and fit it on a new target task you can use the following command:
 ```
-python3 deep_audio_features/bin/transfer_learning.py -m /path/to/model -i /path/to/folder1 /path/to/folder2 -s
+python3 deep_audio_features/bin/transfer_learning.py -m /path/to/model -i /path/to/folder1 /path/to/folder2 -l layers_freezed -s
 ```
 `-m` : select a model to apply fine-tuning.
 `-i` : select the folders where the data will be loaded from.
-`-s` : select which strategy to use. `0` applies fine-tuning to all layers 
-while `1` freezes `Conv2d` layers and fine-tunes `Linear` only.
+`-l` : the number of layers (layers_freezed) to be freezed (counting from the first convolutional layer to the last linear layer)
+`-s` :  is an optional default strategy (it cancels -l flag) that freezes all the convolutional layers and trains just the linear ones 
 
 Similarly, you will need the same params to call the `deep_audio_features.bin.transfer_learning.transfer_learning()` 
 function to transfer knowledge from a task to another:
 ```python
 from deep_audio_features.bin import transfer_learning as tl
-tl.transfer_learning('pkl/emotion_energy.pt', ['test/low/', 'test/high'] , strategy=0)
+tl.transfer_learning('pkl/emotion_energy.pt', ['test/low/', 'test/high'] , strategy=0, layers_freezed=0)
 ```
 (The model will be saved in a local filename based on the timestamp)
 
