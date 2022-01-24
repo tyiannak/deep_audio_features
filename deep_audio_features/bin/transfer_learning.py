@@ -35,7 +35,7 @@ from deep_audio_features.dataloading.dataloading import FeatureExtractorDataset
 # sys.path.insert(0, '/'.join(os.path.abspath(__file__).split(' /')[:-2]))
 
 
-def transfer_learning(modelpath=None, folders=None, strategy=False,
+def transfer_learning(modelpath=None, ofile=None, folders=None, strategy=False,
                       zero_pad=ZERO_PAD, forced_size=None, layers_freezed=0):
     """Transfer learning from all folders given to a model."""
 
@@ -186,8 +186,12 @@ def transfer_learning(modelpath=None, folders=None, strategy=False,
         best_model_loss = valid_losses[best_index]
         print('Best model\'s validation loss: {}'.format(best_model_loss))
 
-
-    ofile = f"{best_model.__class__.__name__}_{_epochs}_{timestamp}.pt"
+    if ofile is None:
+        ofile = f"{best_model.__class__.__name__}_{_epochs}_{timestamp}.pt"
+    else:
+        ofile = str(ofile)
+        if '.pt' not in ofile or '.pkl' not in ofile:
+            ofile = ''.join([ofile, '.pt'])
 
     if not os.path.exists(VARIABLES_FOLDER):
         os.makedirs(VARIABLES_FOLDER)
@@ -229,7 +233,8 @@ if __name__ == '__main__':
 
     parser.add_argument('-l', '--layers_freezed', required=False, default=0,
                         type=int, help='Number of final layers to freeze their weights')
-
+    parser.add_argument('-o', '--ofile', required=False, default=None,
+                        type=str, help='Model name.')
     args = parser.parse_args()
 
     # Get argument
@@ -237,6 +242,7 @@ if __name__ == '__main__':
     modelpath = args.model
     strategy = args.strategy
     layers_freezed = args.layers_freezed
+    ofile = args.ofile
     # Fix any type errors
     folders = [f.replace(',', '').strip() for f in folders]
 
@@ -251,7 +257,7 @@ if __name__ == '__main__':
 
     # If everything is ok, time to start
     if FORCE_SIZE:
-        transfer_learning(modelpath=modelpath, folders=folders,
+        transfer_learning(modelpath=modelpath, ofile=ofile, folders=folders,
                           strategy=strategy, forced_size=SPECTOGRAM_SIZE, layers_freezed=layers_freezed)
     else:
-        transfer_learning(modelpath=modelpath, folders=folders, strategy=strategy, layers_freezed=layers_freezed)
+        transfer_learning(modelpath=modelpath, ofile=ofile, folders=folders, strategy=strategy, layers_freezed=layers_freezed)
