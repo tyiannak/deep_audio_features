@@ -76,6 +76,11 @@ Returns:
 
     # Create model
     new_model = torch.nn.Sequential(*new_model_layers)
+    # TODO: make that safer!
+    new_model.max_sequence_length = model.max_sequence_length
+    new_model.zero_pad = model.zero_pad
+    new_model.spec_size = model.spec_size
+    new_model.fuse = model.fuse
     return new_model
 
 
