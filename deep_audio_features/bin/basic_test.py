@@ -84,8 +84,8 @@ Returns:
                                  else False)
     if verbose:
         if task == "classification":
-            print("--> Unormalized posteriors:\n {}\n".format(posteriors))
             if layers_dropped == 0:
+                print("--> Unormalized posteriors:\n {}\n".format(posteriors))
                 print("--> Predictions:\n {}".format([class_names[yy]
                                                       for yy in preds]))
                 # show aggregated posteriors:
