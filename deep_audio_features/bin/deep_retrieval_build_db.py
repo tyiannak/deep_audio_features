@@ -90,7 +90,7 @@ if __name__ == '__main__':
                         type=str, help='File to store the database')
     parser.add_argument('-v', '--verbose', action='store_true',
                         help='Print model predictions')
-    parser.add_argument('-l', '--layers_dropped', required=False,
+    parser.add_argument('-l', '--layers_dropped', required=False, default=1,
                         type=int, help='Number of final layers to drop from the models')
     args = parser.parse_args()
 
