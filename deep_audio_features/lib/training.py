@@ -363,6 +363,8 @@ def test(model, dataloader, cnn=False, classifier=True, task="classification"):
             # Get metrics
             preds = np.array(preds).flatten()
             y_true = np.array(y_true).flatten()
+    else:
+        preds = np.squeeze(np.array(preds))
 
     return posteriors, preds, y_true
 
