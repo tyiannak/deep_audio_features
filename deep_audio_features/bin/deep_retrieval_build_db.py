@@ -27,6 +27,8 @@ def get_meta_features(audio_file, list_of_models, layers_dropped=0, verbose=True
             model_params = pickle.load(input_file)
         if "classes_mapping" in model_params:
             task = "classification"
+        else:
+            task = "representation"
 
         r, soft = test_model(modelpath=m,
                              ifile=audio_file,
@@ -45,7 +47,7 @@ def get_meta_features(audio_file, list_of_models, layers_dropped=0, verbose=True
 
         features = np.concatenate([features, average])
         feature_names += [f'{os.path.basename(m).replace(".pt", "")}_{i}'
-                          for i in range(len(soft_average))]
+                          for i in range(len(average))]
 
         # keep whole temporal posterior sequences as well
         features_temporal.append(model_features)
