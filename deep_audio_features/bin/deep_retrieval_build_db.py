@@ -22,22 +22,36 @@ def get_meta_features(audio_file, list_of_models, layers_dropped=0, verbose=True
     features_temporal = []
     features = np.array([])
     for m in list_of_models:
+
+        with open(m, "rb") as input_file:
+            model_params = pickle.load(input_file)
+        if "classes_mapping" in model_params:
+            task = "classification"
+        else:
+            task = "representation"
+
         r, soft = test_model(modelpath=m,
                              ifile=audio_file,
                              layers_dropped=layers_dropped,
                              test_segmentation=True,
                              verbose=verbose)
-        # long-term average the posteriors
-        # (along different CNN segment-decisions)
-        soft_average = np.mean(soft, axis=0).ravel()
+        #print(len(r))
+        #exit()
+        if task == "classification":
+            model_features = np.squeeze(np.array(soft))
+        else:
+            model_features = np.array(r)
 
-        features = np.concatenate([features, soft_average])
+        # long-term average the CNN posteriors or CAE representations
+        # (along different CNN/CAE segment-decisions)
+        average = np.mean(model_features, axis=0).ravel()
+
+        features = np.concatenate([features, average])
         feature_names += [f'{os.path.basename(m).replace(".pt", "")}_{i}'
-                          for i in range(len(soft_average))]
+                          for i in range(len(average))]
 
         # keep whole temporal posterior sequences as well
-        features_temporal.append(soft)
-
+        features_temporal.append(model_features)
     return features, features_temporal, feature_names
 
 
@@ -51,7 +65,9 @@ def compile_deep_database(data_folder, models_folder, db_path, verbose=True, lay
     for a in audio_files:
         f, f_temporal, f_names = get_meta_features(a, models, verbose=verbose, layers_dropped=layers_dropped)
         all_features.append(f)
-        all_features_temporal.append(np.concatenate(f_temporal, axis=1).transpose())
+        #all_features_temporal.append(np.concatenate(f_temporal, axis=1).transpose())
+        all_features_temporal.append(f_temporal)
+
     all_features = np.array(all_features)
 
     with open(db_path, 'wb') as f:
@@ -74,7 +90,7 @@ if __name__ == '__main__':
                         type=str, help='File to store the database')
     parser.add_argument('-v', '--verbose', action='store_true',
                         help='Print model predictions')
-    parser.add_argument('-l', '--layers_dropped', required=False,
+    parser.add_argument('-l', '--layers_dropped', required=False, default=1,
                         type=int, help='Number of final layers to drop from the models')
     args = parser.parse_args()
 
