@@ -23,7 +23,7 @@ def get_meta_features(audio_file, list_of_models, layers_dropped=0, verbose=True
     features = np.array([])
     for m in list_of_models:
 
-        with open(modelpath, "rb") as input_file:
+        with open(m, "rb") as input_file:
             model_params = pickle.load(input_file)
         if "classes_mapping" in model_params:
             task = "classification"
