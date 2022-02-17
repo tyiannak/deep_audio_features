@@ -38,9 +38,9 @@ def get_meta_features(audio_file, list_of_models, layers_dropped=0, verbose=True
         #print(len(r))
         #exit()
         if task == "classification":
-            model_features = soft
+            model_features = np.squeeze(np.array(soft))
         else:
-            model_features = r
+            model_features = np.array(r)
 
         # long-term average the CNN posteriors or CAE representations
         # (along different CNN/CAE segment-decisions)
@@ -52,7 +52,6 @@ def get_meta_features(audio_file, list_of_models, layers_dropped=0, verbose=True
 
         # keep whole temporal posterior sequences as well
         features_temporal.append(model_features)
-
     return features, features_temporal, feature_names
 
 
@@ -68,6 +67,7 @@ def compile_deep_database(data_folder, models_folder, db_path, verbose=True, lay
         all_features.append(f)
         #all_features_temporal.append(np.concatenate(f_temporal, axis=1).transpose())
         all_features_temporal.append(f_temporal)
+
     all_features = np.array(all_features)
 
     with open(db_path, 'wb') as f:
