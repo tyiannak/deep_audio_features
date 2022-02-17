@@ -42,7 +42,6 @@ def get_meta_features(audio_file, list_of_models, layers_dropped=0, verbose=True
         else:
             model_features = r
 
-        print(model_features.shape)
         # long-term average the CNN posteriors or CAE representations
         # (along different CNN/CAE segment-decisions)
         average = np.mean(model_features, axis=0).ravel()
