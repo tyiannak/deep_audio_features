@@ -1,4 +1,4 @@
-import argparse
+6import argparse
 import sys, os
 sys.path.insert(0, os.path.join(
     os.path.dirname(os.path.realpath(__file__)), "../../"))
@@ -22,21 +22,33 @@ def get_meta_features(audio_file, list_of_models, layers_dropped=0, verbose=True
     features_temporal = []
     features = np.array([])
     for m in list_of_models:
+
+        with open(modelpath, "rb") as input_file:
+            model_params = pickle.load(input_file)
+        if "classes_mapping" in model_params:
+            task = "classification"
+
         r, soft = test_model(modelpath=m,
                              ifile=audio_file,
                              layers_dropped=layers_dropped,
                              test_segmentation=True,
                              verbose=verbose)
-        # long-term average the posteriors
-        # (along different CNN segment-decisions)
-        soft_average = np.mean(soft, axis=0).ravel()
 
-        features = np.concatenate([features, soft_average])
+        if task == "classification":
+            model_features = soft
+        else:
+            model_features = r
+
+        # long-term average the CNN posteriors or CAE representations
+        # (along different CNN/CAE segment-decisions)
+        average = np.mean(model_features, axis=0).ravel()
+
+        features = np.concatenate([features, average])
         feature_names += [f'{os.path.basename(m).replace(".pt", "")}_{i}'
                           for i in range(len(soft_average))]
 
         # keep whole temporal posterior sequences as well
-        features_temporal.append(soft)
+        features_temporal.append(model_features)
 
     return features, features_temporal, feature_names
 
