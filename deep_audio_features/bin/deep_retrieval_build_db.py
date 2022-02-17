@@ -66,7 +66,8 @@ def compile_deep_database(data_folder, models_folder, db_path, verbose=True, lay
     for a in audio_files:
         f, f_temporal, f_names = get_meta_features(a, models, verbose=verbose, layers_dropped=layers_dropped)
         all_features.append(f)
-        all_features_temporal.append(np.concatenate(f_temporal, axis=1).transpose())
+        #all_features_temporal.append(np.concatenate(f_temporal, axis=1).transpose())
+        all_features_temporal.append(f_temporal)
     all_features = np.array(all_features)
 
     with open(db_path, 'wb') as f:
