@@ -127,7 +127,7 @@ class ConvDecoder(nn.Module):
 
 
 class ConvAutoEncoder(nn.Module):
-    def __init__(self, height, width, representation_channels=10, first_channels=32,
+    def __init__(self, height, width, representation_channels=10, first_channels=64,
                  kernel_size=5, stride=1, padding=2, zero_pad=False,
                  spec_size=SPECTOGRAM_SIZE, fuse=False):
         super(ConvAutoEncoder, self).__init__()
