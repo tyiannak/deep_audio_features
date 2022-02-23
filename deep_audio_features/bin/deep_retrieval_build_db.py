@@ -35,17 +35,18 @@ def get_meta_features(audio_file, list_of_models, layers_dropped=0, verbose=True
                              layers_dropped=layers_dropped,
                              test_segmentation=True,
                              verbose=verbose)
-        #print(len(r))
-        #exit()
+
         if task == "classification":
             model_features = np.squeeze(np.array(soft))
         else:
             model_features = np.array(r)
-
-        # long-term average the CNN posteriors or CAE representations
-        # (along different CNN/CAE segment-decisions)
-        average = np.mean(model_features, axis=0).ravel()
-
+        if model_features.ndim>1:
+            # long-term average the CNN posteriors or CAE representations
+            # (along different CNN/CAE segment-decisions)
+            average = np.mean(model_features, axis=0).ravel()
+        else:
+            # if only 1 segment exists in the data:
+            average = model_features
         features = np.concatenate([features, average])
         feature_names += [f'{os.path.basename(m).replace(".pt", "")}_{i}'
                           for i in range(len(average))]
