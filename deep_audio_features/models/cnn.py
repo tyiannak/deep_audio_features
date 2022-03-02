@@ -28,7 +28,7 @@ class CNN1(nn.Module):
         self.stride = stride
 
         self.conv_layer1 = nn.Sequential(
-            nn.Conv2d(1, first_channels, kernel_size=5,
+            nn.Conv2d(1, first_channels, kernel_size=kernel_size,
                       stride=stride, padding=padding),
             nn.BatchNorm2d(first_channels),
             nn.LeakyReLU(),
@@ -37,7 +37,7 @@ class CNN1(nn.Module):
 
             self.conv_layer2 = nn.Sequential(
                 nn.Conv2d(first_channels, self.cnn_channels*first_channels,
-                          kernel_size=5, stride=stride, padding=padding),
+                          kernel_size=kernel_size, stride=stride, padding=padding),
                 nn.BatchNorm2d(self.cnn_channels*first_channels),
                 nn.LeakyReLU(),
                 nn.MaxPool2d(kernel_size=2)
@@ -45,7 +45,7 @@ class CNN1(nn.Module):
             self.conv_layer3 = nn.Sequential(
                 nn.Conv2d(self.cnn_channels * first_channels,
                           (self.cnn_channels ** 2) * first_channels,
-                          kernel_size=5, stride=stride, padding=padding),
+                          kernel_size=kernel_size, stride=stride, padding=padding),
                 nn.BatchNorm2d((self.cnn_channels ** 2) * first_channels),
                 nn.LeakyReLU(),
                 nn.MaxPool2d(kernel_size=2)
@@ -54,7 +54,7 @@ class CNN1(nn.Module):
             self.conv_layer4 = nn.Sequential(
                 nn.Conv2d((self.cnn_channels**2)*first_channels,
                           (self.cnn_channels**3) * first_channels,
-                          kernel_size=5, stride=stride, padding=padding),
+                          kernel_size=kernel_size, stride=stride, padding=padding),
                 nn.BatchNorm2d((self.cnn_channels ** 3) * first_channels),
                 nn.LeakyReLU(),
                 nn.MaxPool2d(kernel_size=2)
