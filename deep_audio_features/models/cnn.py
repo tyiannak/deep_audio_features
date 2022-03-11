@@ -96,8 +96,8 @@ class CNN1(nn.Module):
         return out
 
     def calc_out_size(self):
-        height = int(self.height / 16)
-        width = int(self.width / 16)
+        height = int(self.height / (2 ** (self.num_cnn_layers)))
+        width = int(self.width / (2 ** (self.num_cnn_layers)))
         kernels = (self.cnn_channels ** (self.num_cnn_layers - 1)) *\
             self.first_channels
         return kernels * height * width
