@@ -145,7 +145,13 @@ def transfer_learning(modelpath=None, ofile=None, folders=None, strategy=False,
                                   weight_decay=.02)
 
     if task == "classification":
-        loss_function = torch.nn.CrossEntropyLoss()
+        from sklearn.utils import class_weight
+        import numpy as np
+        class_weights=class_weight.compute_class_weight('balanced',np.unique(y_train),np.array(y_train))
+        class_weights=torch.tensor(class_weights, dtype=torch.float).to(device)
+        print(class_weights)
+        loss_function = torch.nn.CrossEntropyLoss(weight=class_weights,reduction='mean')
+        #loss_function = torch.nn.CrossEntropyLoss()
     else:
         loss_function = torch.nn.MSELoss()
 
