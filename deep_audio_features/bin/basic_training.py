@@ -17,6 +17,9 @@ import pickle
 import torch
 from torch.utils.data import DataLoader
 import sys, os
+from sklearn.utils import class_weight
+import numpy as np
+
 sys.path.insert(0, os.path.join(
     os.path.dirname(os.path.realpath(__file__)), "../../"))
 from deep_audio_features.bin.config import EPOCHS, CNN_BOOLEAN, VARIABLES_FOLDER, ZERO_PAD, \
@@ -134,12 +137,8 @@ def train_model(folders=None, ofile=None, task="classification", zero_pad=ZERO_P
                                   weight_decay=.02)
 
     if task == "classification":
-        print(y_train)
-        from sklearn.utils import class_weight
-        import numpy as np
         class_weights=class_weight.compute_class_weight('balanced',np.unique(y_train),np.array(y_train))
         class_weights=torch.tensor(class_weights, dtype=torch.float).to(device)
-        print(class_weights)
         loss_function = torch.nn.CrossEntropyLoss(weight=class_weights,reduction='mean')
         #loss_function = torch.nn.CrossEntropyLoss()
     else:

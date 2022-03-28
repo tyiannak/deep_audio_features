@@ -17,6 +17,8 @@ import torch
 import sys
 import pickle
 from torch.utils.data import DataLoader
+from sklearn.utils import class_weight
+import numpy as np
 
 
 sys.path.insert(0, os.path.join(
@@ -145,11 +147,8 @@ def transfer_learning(modelpath=None, ofile=None, folders=None, strategy=False,
                                   weight_decay=.02)
 
     if task == "classification":
-        from sklearn.utils import class_weight
-        import numpy as np
         class_weights=class_weight.compute_class_weight('balanced',np.unique(y_train),np.array(y_train))
         class_weights=torch.tensor(class_weights, dtype=torch.float).to(device)
-        print(class_weights)
         loss_function = torch.nn.CrossEntropyLoss(weight=class_weights,reduction='mean')
         #loss_function = torch.nn.CrossEntropyLoss()
     else:
