@@ -34,7 +34,7 @@ from deep_audio_features.dataloading.dataloading import FeatureExtractorDataset
 
 
 def train_model(folders=None, ofile=None, task="classification", zero_pad=ZERO_PAD,
-                forced_size=None):
+                forced_size=None, class_weighting=False):
     """Train a given model on a given dataset"""
     # Check that folders exist
     torch.manual_seed(0)
@@ -137,10 +137,13 @@ def train_model(folders=None, ofile=None, task="classification", zero_pad=ZERO_P
                                   weight_decay=.02)
 
     if task == "classification":
-        class_weights=class_weight.compute_class_weight('balanced',np.unique(y_train),np.array(y_train))
-        class_weights=torch.tensor(class_weights, dtype=torch.float).to(device)
-        loss_function = torch.nn.CrossEntropyLoss(weight=class_weights,reduction='mean')
-        #loss_function = torch.nn.CrossEntropyLoss()
+        if class_weighting:
+            print("--> Using class weighting in loss function")
+            class_weights = class_weight.compute_class_weight('balanced',np.unique(y_train),np.array(y_train))
+            class_weights = torch.tensor(class_weights, dtype=torch.float).to(device)
+            loss_function = torch.nn.CrossEntropyLoss(weight=class_weights,reduction='mean')
+        else:
+            loss_function = torch.nn.CrossEntropyLoss()
     else:
         loss_function = torch.nn.MSELoss()
 
@@ -220,12 +223,15 @@ if __name__ == '__main__':
                         type=str, help='Model name.')
     parser.add_argument('-t', '--task', required=False, default="classification",
                         type=str, help='task: (i) classification, (ii) representation')
+    parser.add_argument('-cw', '--class_weighting', required=False, action='store_true',
+                        help='If added then use class weighting in loss function')
     args = parser.parse_args()
 
     # Get argument
     folders = args.input
     ofile = args.ofile
     task = args.task
+    class_weighting = args.class_weighting
 
     # Fix any type errors
     folders = [f.replace(',', '').strip() for f in folders]
@@ -236,6 +242,6 @@ if __name__ == '__main__':
             raise FileNotFoundError()
 
     if FORCE_SIZE:
-        train_model(folders, ofile, task, forced_size=SPECTOGRAM_SIZE)
+        train_model(folders, ofile, task, forced_size=SPECTOGRAM_SIZE, class_weighting=class_weighting)
     else:
-        train_model(folders, ofile, task)
+        train_model(folders, ofile, task, class_weighting=class_weighting)
