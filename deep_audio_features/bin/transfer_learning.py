@@ -17,6 +17,8 @@ import torch
 import sys
 import pickle
 from torch.utils.data import DataLoader
+from sklearn.utils import class_weight
+import numpy as np
 
 
 sys.path.insert(0, os.path.join(
@@ -36,7 +38,7 @@ from deep_audio_features.dataloading.dataloading import FeatureExtractorDataset
 
 
 def transfer_learning(modelpath=None, ofile=None, folders=None, strategy=False,
-                      zero_pad=ZERO_PAD, forced_size=None, layers_freezed=0):
+                      zero_pad=ZERO_PAD, forced_size=None, layers_freezed=0, class_weighting=False):
     """Transfer learning from all folders given to a model."""
 
     # Arguments check
@@ -145,7 +147,13 @@ def transfer_learning(modelpath=None, ofile=None, folders=None, strategy=False,
                                   weight_decay=.02)
 
     if task == "classification":
-        loss_function = torch.nn.CrossEntropyLoss()
+        if class_weighting:
+            print("--> Using class weighting in loss function")
+            class_weights=class_weight.compute_class_weight('balanced',np.unique(y_train),np.array(y_train))
+            class_weights=torch.tensor(class_weights, dtype=torch.float).to(device)
+            loss_function = torch.nn.CrossEntropyLoss(weight=class_weights,reduction='mean')
+        else:
+            loss_function = torch.nn.CrossEntropyLoss()
     else:
         loss_function = torch.nn.MSELoss()
 
@@ -235,6 +243,8 @@ if __name__ == '__main__':
                         type=int, help='Number of final layers to freeze their weights')
     parser.add_argument('-o', '--ofile', required=False, default=None,
                         type=str, help='Model name.')
+    parser.add_argument('-cw', '--class_weighting', required=False, action='store_true',
+                        help='If added then use class weighting in loss function')
     args = parser.parse_args()
 
     # Get argument
@@ -243,6 +253,8 @@ if __name__ == '__main__':
     strategy = args.strategy
     layers_freezed = args.layers_freezed
     ofile = args.ofile
+    class_weighting = args.class_weighting
+
     # Fix any type errors
     folders = [f.replace(',', '').strip() for f in folders]
 
@@ -258,6 +270,6 @@ if __name__ == '__main__':
     # If everything is ok, time to start
     if FORCE_SIZE:
         transfer_learning(modelpath=modelpath, ofile=ofile, folders=folders,
-                          strategy=strategy, forced_size=SPECTOGRAM_SIZE, layers_freezed=layers_freezed)
+                          strategy=strategy, forced_size=SPECTOGRAM_SIZE, layers_freezed=layers_freezed, class_weighting=class_weighting)
     else:
-        transfer_learning(modelpath=modelpath, ofile=ofile, folders=folders, strategy=strategy, layers_freezed=layers_freezed)
+        transfer_learning(modelpath=modelpath, ofile=ofile, folders=folders, strategy=strategy, layers_freezed=layers_freezed, class_weighting=class_weighting)
