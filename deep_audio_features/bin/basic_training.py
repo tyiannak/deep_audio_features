@@ -36,16 +36,14 @@ from deep_audio_features.dataloading.dataloading import FeatureExtractorDataset
 def train_model(folders=None, ofile=None, task="classification", zero_pad=ZERO_PAD,
                 forced_size=None, class_weighting=False):
     """Train a given model on a given dataset"""
-    # Check that folders exist
-    torch.manual_seed(0)
-    torch.cuda.manual_seed_all(0)
-    torch.backends.cudnn.deterministic = True
 
+    # Check that folders exist
     if folders is None:
         raise FileNotFoundError()
 
-    # Create classes
-    # classes = [os.path.basename(f) for f in folders]
+    torch.manual_seed(0)
+    torch.cuda.manual_seed_all(0)
+    torch.backends.cudnn.deterministic = True
 
     # Use data only for training and validation. Instead of using validation,
     # we just use test data. There is no difference.
