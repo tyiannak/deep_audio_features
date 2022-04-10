@@ -12,7 +12,7 @@ requirements = read('requirements.txt').splitlines()
 
 
 setup(name='deep_audio_features',
-      version='0.2.13',
+      version='0.2.18',
       description='Extract supervised deep features using CNN audio classifiers',
       url='https://github.com/tyiannak/deep_audio_features',
       author='Theodoros Giannakopoulos',
