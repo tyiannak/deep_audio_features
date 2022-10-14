@@ -90,11 +90,9 @@ Returns:
                                                       for yy in preds]))
                 # show aggregated posteriors:
                 posts = numpy.array(posteriors)
-                probs = []
-                for w in range(posts.shape[0]): # for each segment:
-                    p = numpy.exp(posts[w, :]) / numpy.sum(numpy.exp(posts[w, :]))
-                    probs.append(p)
-                probs = numpy.array(probs)
+                probs = numpy.exp(posts) / \
+                    numpy.sum(numpy.exp(posts),
+                              axis=1).reshape(posts.shape[0], 1)
                 p_aggregated = probs.mean(axis=0)
                 for ip in numpy.argsort(p_aggregated)[::-1]:
                     print(f"{class_names[ip]}\t{p_aggregated[ip]:.2f}")
