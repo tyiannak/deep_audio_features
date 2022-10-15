@@ -70,7 +70,8 @@ Returns:
                                        forced_size=spec_size,
                                        fuse=fuse, show_hist=False,
                                        test_segmentation=test_segmentation,
-                                       hop_length=hop_length, window_length=window_length)
+                                       hop_length=hop_length, 
+                                       window_length=window_length)
 
     # Create test dataloader
     test_loader = DataLoader(dataset=test_set, batch_size=1,
