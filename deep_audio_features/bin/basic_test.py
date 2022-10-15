@@ -80,9 +80,9 @@ Returns:
 
     # Forward a sample
     posteriors, preds, _ = test(model=model, dataloader=test_loader,
-                                 cnn=True, task=task,
-                                 classifier=True if layers_dropped == 0
-                                 else False)
+                                cnn=True, task=task,
+                                classifier=True if layers_dropped == 0
+                                else False)
     if verbose:
         if task == "classification":
             if layers_dropped == 0:
