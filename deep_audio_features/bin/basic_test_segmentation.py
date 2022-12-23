@@ -135,7 +135,7 @@ if __name__ == '__main__':
     for i in range(len(d)):
         print(class_names_model[d[i]])
 
-    seg_size = ((model_params["spec_size"])[1] - 1) * 0.05
+    seg_size = ((model_params["spec_size"])[1] - 1) * model_params["window_length"]
 
     import itertools
     times = int(seg_size / 0.1)
