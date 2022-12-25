@@ -120,7 +120,6 @@ if __name__ == '__main__':
         task = "classification"
         model, hop_length, window_length = load_cnn(model_name)
         class_names_model = model.classes_mapping
-
     # Test the model
     d, p = deep_audio_features.bin.basic_test.test_model(modelpath=model_name, 
                       ifile=ifile,
@@ -129,33 +128,33 @@ if __name__ == '__main__':
 
 
     labels, class_names = load_ground_truth_segments(args.groundtruth, 0.1)
-    for i in range(len(labels)):
-        print(i, class_names[labels[i]])
-
-    for i in range(len(d)):
-        print(class_names_model[d[i]])
+#    for i in range(len(labels)):
+#        print(i, class_names[labels[i]]
+#    for i in range(len(d)):
+#        print(class_names_model[d[i]])
 
     seg_size = ((model_params["spec_size"])[1] - 1) * model_params["window_length"]
-
+    print("class_names_model")
+    print(class_names_model)
     import itertools
     times = int(seg_size / 0.1)
     d2 = list(itertools.chain.from_iterable(itertools.repeat(x, times) for x in d))
 
     min_len = min(len(d2), len(labels))
     d2 = d2[:min_len]
-    for i in range(len(d2)):
-        if d2[i] == 3:
-            d2[i] = 0
-            print("AAAA")
-        else:
-            d2[i] = 1
+#    for i in range(len(d2)):
+#        if d2[i] == 1:
+#            d2[i] = 0
+#            print("AAAA")
+#        else:
+#            d2[i] = 1
     labels = labels[:min_len]
 
-    print(class_names_model)
-    print(class_names)
-    print(labels)
-    print(d2)
+    for i in range(len(labels)):
+        print(class_names[labels[i]], class_names_model[d2[i]])
+    results_gt = [class_names[labels[i]] for i in range(len(labels))]
+    results = [class_names_model[d2[i]] for i in range(len(d2))]
     import sklearn.metrics as metrics
-    print(metrics.accuracy_score(labels, d2))
-    print(metrics.recall_score(labels, d2, average=None))
-    print(metrics.precision_score(labels, d2, average=None))
+    print(metrics.accuracy_score(results_gt, results))
+    print(metrics.recall_score(results_gt, results, average=None))
+    print(metrics.precision_score(results_gt, results, average=None))
