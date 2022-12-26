@@ -113,7 +113,6 @@ if __name__ == '__main__':
     # Get arguments
     model_name = args.model
     ifile = args.input
-    layers_dropped = int(args.layers)
     segmentation = args.segmentation
 
     # Restore model
@@ -126,7 +125,7 @@ if __name__ == '__main__':
     # Test the model
     d, p = deep_audio_features.bin.basic_test.test_model(modelpath=model_name,
                                                          ifile=ifile,
-                                                         layers_dropped=layers_dropped,
+                                                         layers_dropped=0,
                                                          test_segmentation=segmentation)
 
 
