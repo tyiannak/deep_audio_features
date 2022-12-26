@@ -113,7 +113,7 @@ if __name__ == '__main__':
     # Get arguments
     model_name = args.model
     ifile = args.input
-    segmentation = args.segmentation
+    seg = args.segmentation
 
     # Restore model
     with open(model_name, "rb") as input_file:
@@ -126,7 +126,7 @@ if __name__ == '__main__':
     d, p = deep_audio_features.bin.basic_test.test_model(modelpath=model_name,
                                                          ifile=ifile,
                                                          layers_dropped=0,
-                                                         test_segmentation=segmentation)
+                                                         test_segmentation=seg)
 
 
     labels, class_names = load_ground_truth_segments(args.groundtruth, 0.1)
