@@ -1,15 +1,18 @@
 import argparse
-import torch
 from torch.utils.data import DataLoader
-import sys, os
+import sys 
+import os
 import pickle
-sys.path.insert(0, os.path.join(
-    os.path.dirname(os.path.realpath(__file__)), "../../"))
-from deep_audio_features.models.cnn import load_cnn
 import deep_audio_features.bin.basic_test
 import deep_audio_features.bin.config
 import numpy as np
 import csv
+import itertools
+import sklearn.metrics as metrics
+sys.path.insert(0, os.path.join(
+    os.path.dirname(os.path.realpath(__file__)), "../../"))
+from deep_audio_features.models.cnn import load_cnn
+
 
 def segments_to_labels(start_times, end_times, labels, window):
     """
@@ -45,6 +48,7 @@ def segments_to_labels(start_times, end_times, labels, window):
     print(flags), class_names
     return np.array(flags), class_names
 
+
 def read_segmentation_gt(gt_file):
     """
     This function reads a segmentation ground truth file,
@@ -68,6 +72,7 @@ def read_segmentation_gt(gt_file):
                 end_times.append(float(row[1]))
                 labels.append((row[2]))
     return np.array(start_times), np.array(end_times), labels
+
 
 def load_ground_truth_segments(gt_file, mt_step):
     seg_start, seg_end, seg_labels = read_segmentation_gt(gt_file)
@@ -121,22 +126,17 @@ if __name__ == '__main__':
         model, hop_length, window_length = load_cnn(model_name)
         class_names_model = model.classes_mapping
     # Test the model
-    d, p = deep_audio_features.bin.basic_test.test_model(modelpath=model_name, 
-                      ifile=ifile,
-                      layers_dropped=layers_dropped,
-                      test_segmentation=segmentation)
+    d, p = deep_audio_features.bin.basic_test.test_model(modelpath=model_name,
+                                                         ifile=ifile,
+                                                         layers_dropped=layers_dropped,
+                                                         test_segmentation=segmentation)
 
 
     labels, class_names = load_ground_truth_segments(args.groundtruth, 0.1)
-#    for i in range(len(labels)):
-#        print(i, class_names[labels[i]]
-#    for i in range(len(d)):
-#        print(class_names_model[d[i]])
 
     seg_size = ((model_params["spec_size"])[1] - 1) * model_params["window_length"]
     print("class_names_model")
     print(class_names_model)
-    import itertools
     times = int(seg_size / 0.1)
     d2 = list(itertools.chain.from_iterable(itertools.repeat(x, times) for x in d))
 
@@ -154,7 +154,7 @@ if __name__ == '__main__':
         print(class_names[labels[i]], class_names_model[d2[i]])
     results_gt = [class_names[labels[i]] for i in range(len(labels))]
     results = [class_names_model[d2[i]] for i in range(len(d2))]
-    import sklearn.metrics as metrics
+
     print(metrics.accuracy_score(results_gt, results))
     print(metrics.recall_score(results_gt, results, average=None))
     print(metrics.precision_score(results_gt, results, average=None))
