@@ -108,8 +108,6 @@ if __name__ == '__main__':
                         action='store_true',
                         help='Return segment predictions')
 
-    parser.add_argument('-L', '--layers', required=False, default=0,
-                        help='Number of final layers to cut. Default is 0.')
     args = parser.parse_args()
 
     # Get arguments
