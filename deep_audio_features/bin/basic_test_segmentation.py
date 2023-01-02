@@ -17,6 +17,12 @@ from deep_audio_features.models.cnn import load_cnn
 GT_RESOLUTION = 0.1
 
 
+def upsample_sequence(seq, in_segment_duration, out_segment_duration):
+    times = int(in_segment_duration / out_segment_duration)
+    out = list(itertools.chain.from_iterable(itertools.repeat(x, times) for x in seq))
+    return out
+
+
 def segments_to_labels(start_times, end_times, gt_labels, window):
     """
     This function converts segment endpoints and respective segment
@@ -79,9 +85,8 @@ def read_segmentation_gt(gt_file):
 
 def load_ground_truth_segments(gt_file, mt_step):
     seg_start, seg_end, seg_labels = read_segmentation_gt(gt_file)
-    #print(unique(seg_labels))
-    gt_labels, gt_class_names = segments_to_labels(seg_start, seg_end, seg_labels,
-                                             mt_step)
+    gt_labels, gt_class_names = segments_to_labels(seg_start, seg_end,
+                                                   seg_labels, mt_step)
     labels_temp = []
     for index, label in enumerate(gt_labels):
         # "align" gt_labels with GT
@@ -93,6 +98,7 @@ def load_ground_truth_segments(gt_file, mt_step):
     gt_labels = np.array(labels_temp)
 
     return gt_labels, gt_class_names
+
 
 if __name__ == '__main__':
 
@@ -133,21 +139,19 @@ if __name__ == '__main__':
     # load the ground truth file: 
     gt_labels, gt_class_names = load_ground_truth_segments(args.groundtruth, 
                                                            GT_RESOLUTION)
-
     seg_size = ((model_params["spec_size"])[1] - 1) * model_params["window_length"]
-    print("class_names_model")
-    print(class_names_model)
-    times = int(seg_size / GT_RESOLUTION)
-    d2 = list(itertools.chain.from_iterable(itertools.repeat(x, times) for x in labels))
 
-    min_len = min(len(d2), len(gt_labels))
-    d2 = d2[:min_len]
+    labels2 = upsample_sequence(labels, seg_size, GT_RESOLUTION)
+
+    # cut last segments:
+    min_len = min(len(labels2), len(gt_labels))
+    labels2 = labels2[:min_len]
     gt_labels = gt_labels[:min_len]
 
-    for i in range(len(gt_labels)):
-        print(gt_class_names[gt_labels[i]], class_names_model[d2[i]])
+    #for i in range(len(gt_labels)):
+    #    print(gt_class_names[gt_labels[i]], class_names_model[d2[i]])
     results_gt = [gt_class_names[gt_labels[i]] for i in range(len(gt_labels))]
-    results = [class_names_model[d2[i]] for i in range(len(d2))]
+    results = [class_names_model[labels2[i]] for i in range(len(labels2))]
 
     print(metrics.accuracy_score(results_gt, results))
     print(metrics.recall_score(results_gt, results, average=None))
