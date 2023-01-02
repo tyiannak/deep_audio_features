@@ -3,7 +3,7 @@ from torch.utils.data import DataLoader
 import sys
 import os
 import pickle
-import deep_audio_features.bin.basic_test
+import deep_audio_features.bin.basic_test as daf_test
 import deep_audio_features.bin.config
 import numpy as np
 import csv
@@ -14,24 +14,24 @@ sys.path.insert(0, os.path.join(
 from deep_audio_features.models.cnn import load_cnn
 
 
-def segments_to_labels(start_times, end_times, labels, window):
+def segments_to_labels(start_times, end_times, gt_labels, window):
     """
     This function converts segment endpoints and respective segment
-    labels to fix-sized class labels.
+    gt_labels to fix-sized class gt_labels.
     ARGUMENTS:
      - start_times:  segment start points (in seconds)
      - end_times:    segment endpoints (in seconds)
-     - labels:       segment labels
+     - gt_labels:       segment gt_labels
      - window:      fix-sized window (in seconds)
     RETURNS:
      - flags:    np array of class indices
-     - class_names:    list of classnames (strings)
+     - gt_class_names:    list of classnames (strings)
     """
     flags = []
-    class_names = list(set(labels))
+    gt_class_names = list(set(gt_labels))
     # TODO test for multiclass
-    if len(class_names)==1:
-        class_names.append("non" + class_names[0])
+    if len(gt_class_names)==1:
+        gt_class_names.append("non" + gt_class_names[0])
     index = window / 2.0
     found = False
     while index < end_times[-1]:
@@ -40,13 +40,13 @@ def segments_to_labels(start_times, end_times, labels, window):
                 found = True
                 break
         if found:
-            flags.append(class_names.index(labels[i]))
+            flags.append(gt_class_names.index(gt_labels[i]))
         else:
-            flags.append(len(class_names)-1)
+            flags.append(len(gt_class_names)-1)
         found = False
         index += window
-    print(flags), class_names
-    return np.array(flags), class_names
+    print(flags), gt_class_names
+    return np.array(flags), gt_class_names
 
 
 def read_segmentation_gt(gt_file):
@@ -59,37 +59,37 @@ def read_segmentation_gt(gt_file):
     RETURNS:
      - seg_start:     a np array of segments' start positions
      - seg_end:       a np array of segments' ending positions
-     - seg_label:     a list of respective class labels (strings)
+     - seg_label:     a list of respective class gt_labels (strings)
     """
     with open(gt_file, 'rt') as f_handle:
         reader = csv.reader(f_handle, delimiter='\t')
         start_times = []
         end_times = []
-        labels = []
+        gt_labels = []
         for row in reader:
             if len(row) == 3:
                 start_times.append(float(row[0]))
                 end_times.append(float(row[1]))
-                labels.append((row[2]))
-    return np.array(start_times), np.array(end_times), labels
+                gt_labels.append((row[2]))
+    return np.array(start_times), np.array(end_times), gt_labels
 
 
 def load_ground_truth_segments(gt_file, mt_step):
     seg_start, seg_end, seg_labels = read_segmentation_gt(gt_file)
     #print(unique(seg_labels))
-    labels, class_names = segments_to_labels(seg_start, seg_end, seg_labels,
+    gt_labels, gt_class_names = segments_to_labels(seg_start, seg_end, seg_labels,
                                              mt_step)
     labels_temp = []
-    for index, label in enumerate(labels):
-        # "align" labels with GT
-        if class_names[labels[index]] in class_names:
-            labels_temp.append(class_names.index(class_names[
-                                                     labels[index]]))
+    for index, label in enumerate(gt_labels):
+        # "align" gt_labels with GT
+        if gt_class_names[gt_labels[index]] in gt_class_names:
+            labels_temp.append(gt_class_names.index(gt_class_names[
+                                                     gt_labels[index]]))
         else:
             labels_temp.append(-1)
-    labels = np.array(labels_temp)
+    gt_labels = np.array(labels_temp)
 
-    return labels, class_names
+    return gt_labels, gt_class_names
 
 if __name__ == '__main__':
 
@@ -122,34 +122,27 @@ if __name__ == '__main__':
         task = "classification"
         model, hop_length, window_length = load_cnn(model_name)
         class_names_model = model.classes_mapping
-    # Test the model
-    d, p = deep_audio_features.bin.basic_test.test_model(modelpath=model_name,
-                                                         ifile=ifile,
-                                                         layers_dropped=0,
-                                                         test_segmentation=seg)
 
+    # segment-level predictions using the model:
+    labels, p = daf_test.test_model(modelpath=model_name, ifile=ifile,
+                                    layers_dropped=0, test_segmentation=seg)
 
-    labels, class_names = load_ground_truth_segments(args.groundtruth, 0.1)
+    # load the ground truth file: 
+    gt_labels, gt_class_names = load_ground_truth_segments(args.groundtruth, 0.1)
 
     seg_size = ((model_params["spec_size"])[1] - 1) * model_params["window_length"]
     print("class_names_model")
     print(class_names_model)
     times = int(seg_size / 0.1)
-    d2 = list(itertools.chain.from_iterable(itertools.repeat(x, times) for x in d))
+    d2 = list(itertools.chain.from_iterable(itertools.repeat(x, times) for x in labels))
 
-    min_len = min(len(d2), len(labels))
+    min_len = min(len(d2), len(gt_labels))
     d2 = d2[:min_len]
-#    for i in range(len(d2)):
-#        if d2[i] == 1:
-#            d2[i] = 0
-#            print("AAAA")
-#        else:
-#            d2[i] = 1
-    labels = labels[:min_len]
+    gt_labels = gt_labels[:min_len]
 
-    for i in range(len(labels)):
-        print(class_names[labels[i]], class_names_model[d2[i]])
-    results_gt = [class_names[labels[i]] for i in range(len(labels))]
+    for i in range(len(gt_labels)):
+        print(gt_class_names[gt_labels[i]], class_names_model[d2[i]])
+    results_gt = [gt_class_names[gt_labels[i]] for i in range(len(gt_labels))]
     results = [class_names_model[d2[i]] for i in range(len(d2))]
 
     print(metrics.accuracy_score(results_gt, results))
