@@ -150,9 +150,17 @@ if __name__ == '__main__':
 
     #for i in range(len(gt_labels)):
     #    print(gt_class_names[gt_labels[i]], class_names_model[d2[i]])
+    # convert label ids to labels (both for results and ground truth):
     results_gt = [gt_class_names[gt_labels[i]] for i in range(len(gt_labels))]
     results = [class_names_model[labels2[i]] for i in range(len(labels2))]
-
-    print(metrics.accuracy_score(results_gt, results))
+    overall_accuracy = metrics.accuracy_score(results_gt, results)
+    print(f'Accuracy: {overall_accuracy:.2f}')
     print(metrics.recall_score(results_gt, results, average=None))
     print(metrics.precision_score(results_gt, results, average=None))
+
+    import plotly.express as px
+    import pandas as pd
+    time = np.arange(0, len(results) * GT_RESOLUTION, GT_RESOLUTION)
+    df_results = pd.DataFrame({"results": results, "results_gt": results_gt, "time": time})
+    fig = px.scatter(df_results, y=["results", "results_gt"], x="time", size_max=60)
+    fig.show()
