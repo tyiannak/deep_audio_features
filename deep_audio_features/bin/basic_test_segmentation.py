@@ -14,6 +14,9 @@ sys.path.insert(0, os.path.join(
 from deep_audio_features.models.cnn import load_cnn
 
 
+GT_RESOLUTION = 0.1
+
+
 def segments_to_labels(start_times, end_times, gt_labels, window):
     """
     This function converts segment endpoints and respective segment
@@ -128,12 +131,13 @@ if __name__ == '__main__':
                                     layers_dropped=0, test_segmentation=seg)
 
     # load the ground truth file: 
-    gt_labels, gt_class_names = load_ground_truth_segments(args.groundtruth, 0.1)
+    gt_labels, gt_class_names = load_ground_truth_segments(args.groundtruth, 
+                                                           GT_RESOLUTION)
 
     seg_size = ((model_params["spec_size"])[1] - 1) * model_params["window_length"]
     print("class_names_model")
     print(class_names_model)
-    times = int(seg_size / 0.1)
+    times = int(seg_size / GT_RESOLUTION)
     d2 = list(itertools.chain.from_iterable(itertools.repeat(x, times) for x in labels))
 
     min_len = min(len(d2), len(gt_labels))
