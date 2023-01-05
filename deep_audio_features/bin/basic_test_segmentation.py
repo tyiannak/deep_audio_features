@@ -158,9 +158,14 @@ if __name__ == '__main__':
     print(metrics.recall_score(results_gt, results, average=None))
     print(metrics.precision_score(results_gt, results, average=None))
 
-    import plotly.express as px
-    import pandas as pd
     time = np.arange(0, len(results) * GT_RESOLUTION, GT_RESOLUTION)
-    df_results = pd.DataFrame({"results": results, "results_gt": results_gt, "time": time})
-    fig = px.scatter(df_results, y=["results", "results_gt"], x="time", size_max=60)
+
+    from plotly.subplots import make_subplots
+    import plotly.graph_objects as go
+
+    fig = make_subplots(rows=2, cols=1)
+
+    fig.add_trace(go.Scatter(x=time, y=results),  row=1, col=1)
+    fig.add_trace(go.Scatter(x=time, y=results_gt), row=2, col=1)
+    fig.update_layout(height=600, title_text="Side By Side Subplots")
     fig.show()
