@@ -48,12 +48,12 @@ def transfer_learning(modelpath=None, ofile=None, folders=None, strategy=False,
     if modelpath is None:
         raise FileNotFoundError()
 
-
     if not isinstance(layers_freezed, int):
         raise AttributeError("variable `layers_freezed` should be int !")
 
-    # Create classes
-    #classes = [os.path.basename(f) for f in folders]
+    torch.manual_seed(0)
+    torch.cuda.manual_seed_all(0)
+    torch.backends.cudnn.deterministic = True
 
     # Check if the model is already loaded
     # and load it to 'cpu' to get some free GPU for Dataloaders
