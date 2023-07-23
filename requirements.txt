@@ -1,7 +1,7 @@
 tqdm==4.52.0
 librosa==0.8.1
 imbalanced_learn==0.8.0
-torch==1.9.0
+torch==1.13.1
 numpy==1.20.3
 matplotlib==3.4.2
 imblearn==0.0
