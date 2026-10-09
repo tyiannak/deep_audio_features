@@ -1,5 +1,7 @@
 
 # deep_audio_features: training an using CNNs on audio classification tasks 
+> Developed at [**MagCIL**](https://magcil.github.io), the Multimodal Analysis Group of the Institute of Informatics and Telecommunications, [NCSR "Demokritos"](https://www.demokritos.gr/), Athens, Greece.
+
 ## 1 About
 `deep_audio_features` is a Python library for training Convolutional Neural Netowrks 
 as audio classifiers. The library provides wrappers to pytorch for training CNNs
@@ -178,3 +180,25 @@ emb, _ = btest.test_model("pkl/energy.pt", 'some_file.wav', test_segmentation=Fa
 ```
 The code above will find out that the model is a ConvAE and will load it in order to extract the embedding from an audio signal stored in `some_file.wav`.
 `emb` stores the produced embeddings. 
+
+## About MagCIL
+
+This repository comes from [MagCIL](https://magcil.github.io), the Multimodal Analysis Group of the
+Institute of Informatics and Telecommunications at the National Centre for Scientific Research
+"Demokritos" in Athens, Greece. We work on multimodal deep learning for audio, speech, music and
+video, from fundamental research to deployed systems.
+
+- Group website: <https://magcil.github.io>
+- Publications: <https://magcil.github.io/pub.html>
+- All our open-source code and data: <https://magcil.github.io/code.html>
+- Work with us, in industry projects or research consortia: <https://magcil.github.io/collaborate.html>
+
+Other tools from the group:
+
+- [`pyAudioAnalysis`](https://github.com/tyiannak/pyAudioAnalysis) &mdash; audio feature extraction, classification, segmentation and applications
+- [`deepaudio-x`](https://github.com/magcil/deepaudio-x) &mdash; a PyTorch framework for audio classification
+- [`deepaudio-lab`](https://github.com/magcil/deepaudio-lab) &mdash; a no-code platform for training, evaluating and deploying audio classifiers
+- [`amvoc`](https://github.com/tyiannak/amvoc) &mdash; analysis of mouse vocal communication
+- [`paura`](https://github.com/tyiannak/paura) &mdash; real-time audio recording and analysis
+
+The full list is at <https://github.com/magcil>.
